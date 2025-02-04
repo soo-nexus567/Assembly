@@ -7,16 +7,21 @@
 # Purpose: The manager of this program
 
 #Delete some un-needed files if they exist.
+# Delete some un-needed files if they exist.
 rm *.out
 
+# Assemble the x86 file triangle.asm, output object file triangle.o
 echo "Assemble the x86 file triangle.asm, output object file triangle.o"
 nasm -f elf64 triangle.asm -o triangle.o
 
-echo "Compile gemoetry.cpp"
-gcc -c -m64 -Wall -fno-pie -no-pie -o geometry.o geometry.c
+# Compile geometry.c
+echo "Compile geometry.c"
+gcc -c -m64 -Wall -fno-pie -no-pie -o geometry.o geometry.c -lm
 
-echo "Link the two object files manager.o and hello.o, output executable file learn.out"
-gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -lm -o learn.out triangle.o geometry.o
+# Link the two object files triangle.o and geometry.o, output executable file learn.out
+echo "Link the two object files triangle.o and geometry.o, output executable file learn.out"
+gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -o learn.out triangle.o geometry.o -lm 
 
-echo "Next the program "Hello Word" will run"
+# Next the program will run
+echo "Next the program will run"
 ./learn.out

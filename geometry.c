@@ -1,11 +1,14 @@
 
 #include <stdio.h>
-extern void triangle();
+
+extern double triangle();
 int main() {
-    printf("\nWelcome to Hello World Program by Code Goblin\n\n");
+    printf("Welcome to the Triangle program maintained by Juan Diaz.\n");
+    printf("If errors are discovered please report them to Juan Diaz at juan@columbia.com  for a quick fix.  At Columbia Software the customer comes first.\n");
     
     // triangle.asm
-    triangle();
-    printf("\n\nGood bye!\n");
+    double result = triangle();
+    printf("The main function received this number %.9f and plans to keep it until needed\n", result);
+    printf("An integer zero will be returned to the operating system. Bye.\n");
     return 0;
 }
