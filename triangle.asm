@@ -14,7 +14,7 @@ segment .data
     title_name db "Please enter your title (Mr, Ms, Nurse, Engineer, etc): ", 0
     sides_num db "Please enter the sides of your triangle separated by ws: ", 0
     angle_num db "Please enter the size in degrees of the angle between those sides: ",0
-    final_name db "Please enjoy your triangles %s %s", 10, 0
+    final_name db "Please enjoy your triangles %s %s", 0
     float_format db "%lf", 10, 0
     two_float db "%lf %lf",0
     one_float db "%lf", 0
@@ -56,9 +56,6 @@ triangle:
     call fgets
 
     ;Remove newline character from the user's input when the player hit Enter
-    mov rdi, name
-    call strlen
-    mov  byte [name + rax - 1], 0 
     ;Ask for title
     mov rax, 0
     mov rdi, title_name
@@ -70,6 +67,12 @@ triangle:
     mov rsi, 25
     mov rdx, [stdin]
     call fgets
+
+    mov rdi, title
+    call strlen
+    mov rbx, rax
+    dec rbx
+    mov byte [title + rbx], 0 
 
     ; Enter sides
     mov rax, 0
@@ -140,6 +143,7 @@ triangle:
     mov rsi, title
     mov rdx, name
     call printf
+
     add rsp, 16
     
     movsd xmm0, qword [results]
