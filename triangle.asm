@@ -1,12 +1,53 @@
+;Author information
+;  Author name: Jonathan Soo
+;  Author email: jonathansoo07@csu.fullerton.edu
+;  Author section: 240-11
+;  Author CWID : 884776980
+;
+;Program information
+;  Program name: Assignment 1
+;  Copyright (C) <2025> <Jonathan Soo>
+;  Programming languages: One modules in C and one module in X86
+;  Date program began:     2025-Jan-27
+;  Date program completed: 2025-Feb-17
+;  Date comments upgraded: 2025-Feb-17
+;  Files in this program: geometry.c, triangle.asm, r.sh
+;  Status: Complete.  No errors found after extensive testing.
+;
+;Copyright Info
+;  "Assignment 1" is free software: you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation, either version 3 of the License, or
+;  (at your option) any later version.
 
-;External C++ functions
+;  "Assignment 1" is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+
+;  You should have received a copy of the GNU General Public License
+;  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;References for this program
+;  Jorgensen, X86-64 Assembly Language Programming with Ubuntu, Version 1.1.40.
+;  Robert Plantz, X86 Assembly Programming.  [No longer available as a free download]
+;
+;Purpose
+;  Calculate the third side of a triangle using float-point arthmetic
+;  Get input from user and ouput using C functions
+;
+;This file
+;   File name: triangle.asm
+;   Language: X86 Assembly
+;   Assemble: nasm -f elf64 triangle.asm -o triangle.o
+;   Link: gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -o learn.out triangle.o geometry.o -lm 
+
 global triangle
     extern printf
     extern scanf
     extern fgets
     extern strlen
     extern cosf
-    
     extern stdin
     extern input_array
 segment .data
@@ -15,10 +56,9 @@ segment .data
     sides_num db "Please enter the sides of your triangle separated by ws: ", 0
     angle_num db "Please enter the size in degrees of the angle between those sides: ",0
     final_name db "Please enjoy your triangles %s %s", 0
-    float_format db "%lf", 10, 0
     two_float db "%lf %lf",0
     one_float db "%lf", 0
-    fmt db "The length of the third side is %.9f units.", 10, 0
+    third_side db "The length of the third side is %.9f units.", 10, 0
     pi_over_180 dq 0.017453292519943295
     constant dq 2.0
     results dq 0.0
@@ -33,14 +73,24 @@ segment .bss
 segment .text
     global triangle
 triangle:
-    push    rbp               ; Save old base pointer
-    mov     rbp, rsp          ; Establish new base pointer
-    push    rbx               ; Only save registers that need preserving
+     ; Save the base pointer
+    push    rbp
+    mov     rbp, rsp
+
+    ; Save the general purpose registers
+    push    rbx
+    push    rcx
+    push    rdx
+    push    rsi
+    push    rdi
+    push    r8 
+    push    r9 
+    push    r10
+    push    r11
     push    r12
     push    r13
     push    r14
     push    r15
-    sub     rsp, 32 
     pushf
 
     ;Ask for input lastname
@@ -55,7 +105,6 @@ triangle:
     mov rdx, [stdin]
     call fgets
 
-    ;Remove newline character from the user's input when the player hit Enter
     ;Ask for title
     mov rax, 0
     mov rdi, title_name
@@ -68,6 +117,7 @@ triangle:
     mov rdx, [stdin]
     call fgets
 
+    ;Remove newline character from the user's input when the player hit Enter
     mov rdi, title
     call strlen
     mov rbx, rax
@@ -79,48 +129,49 @@ triangle:
     mov rdi, sides_num
     call printf
 
-    sub rsp, 16
     ;Ask for sides
+    sub rsp, 16
     mov rdi, two_float
     mov rsi, rsp
     mov rdx, rsp
     add rdx, 8
     call scanf
-
+    
+    ;Square the first side
     movsd xmm4, qword [rsp]
     movsd [side_a], xmm4 
     mulsd xmm4, xmm4
 
+    ;Square the second side
     movsd xmm3, qword [rsp+8]
     movsd [side_b], xmm3
     mulsd xmm3, xmm3
     
+    ; Calulate part_b -> side_a^2 + side_b^2
     addsd xmm4, xmm3
     movsd [part_a], xmm4
     add rsp, 16
-    
 
-    ;Display part_a
-
-   ; Enter the angle and calculate cosine
+    ; Ask for angle 
     mov rax, 0
     mov rdi, angle_num
     call printf    
 
+    ; Enter the angle
     sub rsp, 16
     mov rax, 0
     mov rdi, one_float
     mov rsi, rsp
     call scanf
 
+    ; Calculate Cosine of the angle
     movsd xmm0, qword [rsp]
     add rsp, 16
-
     mulsd xmm0, qword [pi_over_180]
-
     call cosf
     movsd [cosine], xmm0
-    ;C the third side
+
+    ; Calculate part_a -> 2(side_a)(side_b)(cos(angle))
     movsd xmm0, qword [side_a] 
     mulsd xmm0, qword [constant]
     mulsd xmm0, qword [side_b]
@@ -128,32 +179,45 @@ triangle:
     mulsd xmm0, xmm1
     movsd [part_b], xmm0
 
+    ;Square root everything and calculate the third side -> radical(part_a - part_b) 
     movsd xmm0, qword [part_a] 
     subsd xmm0, qword [part_b]
     sqrtsd xmm0, xmm0
     movsd qword [results], xmm0
     
-    mov rdi , fmt
+    ; Store the third side of the triangle in results
+    mov rdi , third_side
     movq xmm0, qword [results]
     call printf
     
+    ;Print the name -> Please enjoy your triangle <title> <name>
     sub rsp, 16
     mov rbp, rsp
     mov rdi , final_name
     mov rsi, title
     mov rdx, name
     call printf
-
     add rsp, 16
     
+    ;Return Value
     movsd xmm0, qword [results]
     
-    popf
-    add     rsp, 32           ; Restore stack (if allocated earlier)
-    pop     r15               ; Restore preserved registers
+    ; Restore the general purpose registers
+    popf          
+    pop     r15
     pop     r14
     pop     r13
     pop     r12
+    pop     r11
+    pop     r10
+    pop     r9 
+    pop     r8 
+    pop     rdi
+    pop     rsi
+    pop     rdx
+    pop     rcx
     pop     rbx
-    pop     rbp               ; Restore base pointer
-    ret                       ; Return to caller
+
+    ; Restore the base pointer
+    pop     rbp
+    ret
