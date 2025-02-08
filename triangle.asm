@@ -1,19 +1,3 @@
-;Author information
-;  Author name: Jonathan Soo
-;  Author email: jonathansoo07@csu.fullerton.edu
-;  Author section: 240-11
-;  Author CWID : 884776980
-;
-;Program information
-;  Program name: Assignment 1
-;  Copyright (C) <2025> <Jonathan Soo>
-;  Programming languages: One modules in C and one module in X86
-;  Date program began:     2025-Jan-27
-;  Date program completed: 2025-Feb-17
-;  Date comments upgraded: 2025-Feb-17
-;  Files in this program: geometry.c, triangle.asm, r.sh
-;  Status: Complete.  No errors found after extensive testing.
-;
 ;Copyright Info
 ;  "Assignment 1" is free software: you can redistribute it and/or modify
 ;  it under the terms of the GNU General Public License as published by
@@ -27,19 +11,29 @@
 
 ;  You should have received a copy of the GNU General Public License
 ;  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-;References for this program
-;  Jorgensen, X86-64 Assembly Language Programming with Ubuntu, Version 1.1.40.
-;  Robert Plantz, X86 Assembly Programming.  [No longer available as a free download]
-;
+;Author information
+;  Author name: Jonathan Soo
+;  Author email: jonathansoo07@csu.fullerton.edu
+;  Author section: 240-11
+;  Author CWID : 884776980
 ;Purpose
 ;  Calculate the third side of a triangle using float-point arthmetic
 ;  Get input from user and ouput using C functions
+;Program information
+;  Program name: Assignment 1
+;  Copyright (C) <2025> <Jonathan Soo>
+;  Programming languages: One modules in C and one module in X86
+;  Date program began:     2025-Jan-27
+;  Date program completed: 2025-Feb-07
+;  Date comments upgraded: 2025-Feb-08
+;  Files in this program: geometry.c, triangle.asm, r.sh
+;  Status: Complete.  No errors found after extensive testing.
 ;
 ;This file
 ;   File name: triangle.asm
-;   Language: X86 Assembly
+;   Language: X86-64 with Linux Syntax
 ;   Assemble: nasm -f elf64 triangle.asm -o triangle.o
+;   Editor: VS Code
 ;   Link: gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -o learn.out triangle.o geometry.o -lm 
 
 global triangle
@@ -93,114 +87,114 @@ triangle:
     push    r15
     pushf
 
-    ;Ask for input lastname
-    mov rax, 0
-    mov rdi, last_name
-    call printf
+    ;Prompt the user for their last name
+    mov     rax, 0
+    mov     rdi, last_name
+    call    printf
 
-    ; Enter username
-    mov rax, 0
-    mov rdi, name
-    mov rsi, 50
-    mov rdx, [stdin]
-    call fgets
+    ; Stores the user's input in name
+    mov     rax, 0
+    mov     rdi, name
+    mov     rsi, 50
+    mov     rdx, [stdin]
+    call    fgets
 
-    ;Ask for title
-    mov rax, 0
-    mov rdi, title_name
-    call printf
+    ;Prompt the user for their title
+    mov     rax, 0
+    mov     rdi, title_name
+    call    printf
 
-    ; Enter title
-    mov rax, 0
-    mov rdi, title
-    mov rsi, 25
-    mov rdx, [stdin]
-    call fgets
+    ; Stores the user's input in title
+    mov     rax, 0
+    mov     rdi, title
+    mov     rsi, 25
+    mov     rdx, [stdin]
+    call    fgets
 
     ;Remove newline character from the user's input when the player hit Enter
-    mov rdi, title
-    call strlen
-    mov rbx, rax
-    dec rbx
-    mov byte [title + rbx], 0 
+    mov     rdi, title
+    call    strlen
+    mov     rbx, rax
+    dec     rbx
+    mov     byte [title + rbx], 0 
 
-    ; Enter sides
-    mov rax, 0
-    mov rdi, sides_num
-    call printf
+    ;Prompt the user for siddes seperated by ws
+    mov     rax, 0
+    mov     rdi, sides_num
+    call    printf
 
-    ;Ask for sides
-    sub rsp, 16
-    mov rdi, two_float
-    mov rsi, rsp
-    mov rdx, rsp
-    add rdx, 8
-    call scanf
+    ;Store the user's input for the two sides
+    sub     rsp, 16
+    mov     rdi, two_float
+    mov     rsi, rsp
+    mov     rdx, rsp
+    add     rdx, 8
+    call    scanf
     
     ;Square the first side
-    movsd xmm4, qword [rsp]
-    movsd [side_a], xmm4 
-    mulsd xmm4, xmm4
+    movsd   xmm15, qword [rsp]
+    movsd   [side_a], xmm15 
+    mulsd   xmm15, xmm15
 
     ;Square the second side
-    movsd xmm3, qword [rsp+8]
-    movsd [side_b], xmm3
-    mulsd xmm3, xmm3
+    movsd   xmm14, qword [rsp+8]
+    movsd   [side_b], xmm14
+    mulsd   xmm14, xmm14
     
     ; Calulate part_b -> side_a^2 + side_b^2
-    addsd xmm4, xmm3
-    movsd [part_a], xmm4
-    add rsp, 16
+    addsd   xmm15, xmm14
+    movsd   [part_a], xmm15
+    add     rsp, 16
 
-    ; Ask for angle 
-    mov rax, 0
-    mov rdi, angle_num
-    call printf    
+    ;Prompt the user for the angle
+    mov     rax, 0
+    mov     rdi, angle_num
+    call    printf    
 
-    ; Enter the angle
-    sub rsp, 16
-    mov rax, 0
-    mov rdi, one_float
-    mov rsi, rsp
-    call scanf
+    ; Store the angle in one_float
+    sub     rsp, 16
+    mov     rax, 0
+    mov     rdi, one_float
+    mov     rsi, rsp
+    call    scanf
 
     ; Calculate Cosine of the angle
-    movsd xmm0, qword [rsp]
-    add rsp, 16
-    mulsd xmm0, qword [pi_over_180]
-    call cosf
-    movsd [cosine], xmm0
+    movsd   xmm0, qword [rsp]
+    add     rsp, 16
+    mulsd   xmm0, qword [pi_over_180]
+    call    cosf
+    movsd   [cosine], xmm0
 
     ; Calculate part_a -> 2(side_a)(side_b)(cos(angle))
-    movsd xmm0, qword [side_a] 
-    mulsd xmm0, qword [constant]
-    mulsd xmm0, qword [side_b]
-    movsd xmm1, qword [cosine]
-    mulsd xmm0, xmm1
-    movsd [part_b], xmm0
+    movsd   xmm0, qword [side_a] 
+    mulsd   xmm0, qword [constant]
+    mulsd   xmm0, qword [side_b]
+    movsd   xmm1, qword [cosine]
+    mulsd   xmm0, xmm1
+    movsd   [part_b], xmm0
 
     ;Square root everything and calculate the third side -> radical(part_a - part_b) 
-    movsd xmm0, qword [part_a] 
-    subsd xmm0, qword [part_b]
-    sqrtsd xmm0, xmm0
-    movsd qword [results], xmm0
+    movsd   xmm0, qword [part_a] 
+    subsd   xmm0, qword [part_b]
+    sqrtsd  xmm0, xmm0
+    movsd   qword [results], xmm0
     
     ; Store the third side of the triangle in results
-    mov rdi , third_side
-    movq xmm0, qword [results]
-    call printf
+    mov     rdi , third_side
+    movq    xmm0, qword [results]
+    call    printf
     
     ;Print the name -> Please enjoy your triangle <title> <name>
-    sub rsp, 16
-    mov rbp, rsp
-    mov rdi , final_name
-    mov rsi, title
-    mov rdx, name
-    call printf
-    add rsp, 16
+    sub     rsp, 16
+    mov     rbp, rsp
+    mov     rdi , final_name
+    mov     rsi, title
+    mov     rdx, name
+    call    printf
+    add     rsp, 16
     
     ;Return Value
-    movsd xmm0, qword [results]
+    movsd   xmm0, qword [results]
     
     ; Restore the general purpose registers
     popf          
