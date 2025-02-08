@@ -167,21 +167,21 @@ triangle:
     movsd   [cosine], xmm0
 
     ; Calculate part_a -> 2(side_a)(side_b)(cos(angle))
-    movsd   xmm10, qword [side_a] 
-    mulsd   xmm10, qword [constant]
-    mulsd   xmm10, qword [side_b]
-    movsd   xmm11, qword [cosine]
+    movsd   xmm10, [side_a] 
+    mulsd   xmm10, [constant]
+    mulsd   xmm10,  [side_b]
+    movsd   xmm11, [cosine]
     mulsd   xmm10, xmm11
     movsd   [part_b], xmm10
 
     ;Square root everything and calculate the third side -> radical(part_a - part_b) 
-    movsd   xmm12, qword [part_a] 
-    subsd   xmm12, qword [part_b]
+    movsd   xmm12, [part_a] 
+    subsd   xmm12, [part_b]
     sqrtsd  xmm12, xmm12
     movsd  [results], xmm12
     
     ; Store the third side of the triangle in results
-    movsd xmm0, qword [results]
+    movsd xmm0,  [results]
     mov     rdi , third_side
     mov     rax, 1
     call    printf
@@ -196,7 +196,7 @@ triangle:
     add     rsp, 16
     
     ;Return Value
-    movsd xmm0, qword [results]
+    movsd xmm0, [results]
     
     ; Restore the general purpose registers
     popf          
