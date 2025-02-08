@@ -169,7 +169,7 @@ triangle:
     ; Calculate part_a -> 2(side_a)(side_b)(cos(angle))
     movsd   xmm10, [side_a] 
     mulsd   xmm10, [constant]
-    mulsd   xmm10,  [side_b]
+    mulsd   xmm10, [side_b]
     movsd   xmm11, [cosine]
     mulsd   xmm10, xmm11
     movsd   [part_b], xmm10
@@ -217,3 +217,18 @@ triangle:
     ; Restore the base pointer
     pop     rbp
     ret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ;asjsajdjajdjsa
