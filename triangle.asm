@@ -132,21 +132,22 @@ triangle:
     call    scanf
     
     ;Square the first side
-    movsd   xmm4, qword [rsp]
-    movsd   [side_a], xmm4 
-    mulsd   xmm4, xmm4
+    movsd   xmm8, qword [rsp]
+    movsd   [side_a], xmm8 
+    mulsd   xmm8, xmm8
 
     ;Square the second side
-    movsd   xmm3, qword [rsp+8]
-    movsd   [side_b], xmm3
-    mulsd   xmm3, xmm3
+    movsd   xmm9, qword [rsp+8]
+    movsd   [side_b], xmm9
+    mulsd   xmm9, xmm9
     
     ; Calulate part_b -> side_a^2 + side_b^2
-    addsd   xmm4, xmm3
-    movsd   [part_a], xmm4
+    addsd   xmm8, xmm9
+    movsd   [part_a], xmm8
     add     rsp, 16
 
     ;Prompt the user for thhe angle
+    movsd xmm0, qword[angle_num]
     mov     rax, 0
     mov     rdi, angle_num
     call    printf    
@@ -166,18 +167,18 @@ triangle:
     movsd   [cosine], xmm0
 
     ; Calculate part_a -> 2(side_a)(side_b)(cos(angle))
-    movsd   xmm0, qword [side_a] 
-    mulsd   xmm0, qword [constant]
-    mulsd   xmm0, qword [side_b]
-    movsd   xmm1, qword [cosine]
-    mulsd   xmm0, xmm1
-    movsd   [part_b], xmm0
+    movsd   xmm10, qword [side_a] 
+    mulsd   xmm10, qword [constant]
+    mulsd   xmm10, qword [side_b]
+    movsd   xmm11, qword [cosine]
+    mulsd   xmm10, xmm11
+    movsd   [part_b], xmm10
 
     ;Square root everything and calculate the third side -> radical(part_a - part_b) 
-    movsd   xmm0, qword [part_a] 
-    subsd   xmm0, qword [part_b]
-    sqrtsd  xmm0, xmm0
-    movsd  [results], xmm0
+    movsd   xmm12, qword [part_a] 
+    subsd   xmm12, qword [part_b]
+    sqrtsd  xmm12, xmm12
+    movsd  [results], xmm12
     
     ; Store the third side of the triangle in results
     movsd xmm0, qword [results]
