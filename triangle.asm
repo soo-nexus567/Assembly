@@ -41,7 +41,7 @@ global triangle
     extern scanf
     extern fgets
     extern strlen
-    extern cosf
+    extern cos
     extern stdin
     extern input_array
 segment .data
@@ -132,21 +132,21 @@ triangle:
     call    scanf
     
     ;Square the first side
-    movsd   xmm15, qword [rsp]
-    movsd   [side_a], xmm15 
-    mulsd   xmm15, xmm15
+    movsd   xmm4, qword [rsp]
+    movsd   [side_a], xmm4 
+    mulsd   xmm4, xmm4
 
     ;Square the second side
-    movsd   xmm14, qword [rsp+8]
-    movsd   [side_b], xmm14
-    mulsd   xmm14, xmm14
+    movsd   xmm3, qword [rsp+8]
+    movsd   [side_b], xmm3
+    mulsd   xmm3, xmm3
     
     ; Calulate part_b -> side_a^2 + side_b^2
-    addsd   xmm15, xmm14
-    movsd   [part_a], xmm15
+    addsd   xmm4, xmm3
+    movsd   [part_a], xmm4
     add     rsp, 16
 
-    ;Prompt the user for the angle
+    ;Prompt the user for thhe angle
     mov     rax, 0
     mov     rdi, angle_num
     call    printf    
@@ -162,7 +162,7 @@ triangle:
     movsd   xmm0, qword [rsp]
     add     rsp, 16
     mulsd   xmm0, qword [pi_over_180]
-    call    cosf
+    call    cos
     movsd   [cosine], xmm0
 
     ; Calculate part_a -> 2(side_a)(side_b)(cos(angle))
@@ -177,11 +177,12 @@ triangle:
     movsd   xmm0, qword [part_a] 
     subsd   xmm0, qword [part_b]
     sqrtsd  xmm0, xmm0
-    movsd   qword [results], xmm0
+    movsd  [results], xmm0
     
     ; Store the third side of the triangle in results
+    movsd xmm0, qword [results]
     mov     rdi , third_side
-    movq    xmm0, qword [results]
+    mov     rax, 1
     call    printf
     
     ;Print the name -> Please enjoy your triangle <title> <name>
@@ -194,7 +195,7 @@ triangle:
     add     rsp, 16
     
     ;Return Value
-    movsd   xmm0, qword [results]
+    movsd xmm0, qword [results]
     
     ; Restore the general purpose registers
     popf          
