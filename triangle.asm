@@ -49,9 +49,10 @@ segment .data
     title_name db "Please enter your title (Mr, Ms, Nurse, Engineer, etc): ", 0
     sides_num db "Please enter the sides of your triangle separated by ws: ", 0
     angle_num db "Please enter the size in degrees of the angle between those sides: ",0
-    final_name db "Please enjoy your triangles %s %s", 0
+    final_name db "Please enjoy your triangles %s %s.", 10, 0
     two_float db "%lf %lf",0
     one_float db "%lf", 0
+    new_line dq 10
     third_side db "The length of the third side is %.9f units.", 10, 0
     pi_over_180 dq 0.017453292519943295
     constant dq 2.0
@@ -99,7 +100,17 @@ triangle:
     mov     rdx, [stdin]
     call    fgets
 
+ 
+    ;Remove newline character from the user's input the name when the player hit Enter
+    mov     rdi, name
+    call    strlen
+    mov     rbx, rax
+    dec     rbx
+    mov     byte [name + rbx], 0 
+
     ;Prompt the user for their title
+    mov     rdi, new_line
+    call    printf
     mov     rax, 0
     mov     rdi, title_name
     call    printf
@@ -111,7 +122,7 @@ triangle:
     mov     rdx, [stdin]
     call    fgets
 
-    ;Remove newline character from the user's input when the player hit Enter
+    ;Remove newline character from the user's inputs the title when the player hit Enter
     mov     rdi, title
     call    strlen
     mov     rbx, rax
@@ -119,6 +130,8 @@ triangle:
     mov     byte [title + rbx], 0 
 
     ;Prompt the user for siddes seperated by ws
+    mov     rdi, new_line
+    call    printf
     mov     rax, 0
     mov     rdi, sides_num
     call    printf
@@ -146,7 +159,9 @@ triangle:
     movsd   [part_a], xmm8
     add     rsp, 16
 
-    ;Prompt the user for thhe angle
+    ;Prompt the user for the angle
+    mov     rdi, new_line
+    call    printf
     movsd xmm0, qword[angle_num]
     mov     rax, 0
     mov     rdi, angle_num
@@ -181,12 +196,16 @@ triangle:
     movsd  [results], xmm12
     
     ; Store the third side of the triangle in results
+    mov     rdi, new_line
+    call    printf
     movsd xmm0, qword [results]
     mov     rdi , third_side
     mov     rax, 1
     call    printf
     
     ;Print the name -> Please enjoy your triangle <title> <name>
+    mov     rdi, new_line
+    call    printf
     sub     rsp, 16
     mov     rbp, rsp
     mov     rdi , final_name
