@@ -1,0 +1,154 @@
+     1                                  global isfloat
+     2                                      null equ 0
+     3                                      true equ -1
+     4                                      false equ 0
+     5                                  
+     6                                   
+     7                                  segment .data
+     8                                  
+     9                                  segment .bss
+    10                                  
+    11                                  segment .text
+    12                                      global isfloat
+    13                                  isfloat:
+    14 00000000 55                          push rbp                                          ;Backup rbp
+    15 00000001 4889E5                      mov  rbp,rsp                                      ;The base pointer now points to top of stack
+    16 00000004 57                          push rdi                                          ;Backup rdi
+    17 00000005 56                          push rsi                                          ;Backup rsi
+    18 00000006 52                          push rdx                                          ;Backup rdx
+    19 00000007 51                          push rcx                                          ;Backup rcx
+    20 00000008 4150                        push r8                                           ;Backup r8
+    21 0000000A 4151                        push r9                                           ;Backup r9
+    22 0000000C 4152                        push r10                                          ;Backup r10
+    23 0000000E 4153                        push r11                                          ;Backup r11
+    24 00000010 4154                        push r12                                          ;Backup r12
+    25 00000012 4155                        push r13                                          ;Backup r13
+    26 00000014 4156                        push r14                                          ;Backup r14
+    27 00000016 4157                        push r15                                          ;Backup r15
+    28 00000018 53                          push rbx                                          ;Backup rbx
+    29 00000019 9C                          pushf     
+    30                                  
+    31 0000001A 4989FD                      mov r13, rdi
+    32 0000001D 4D31F6                      xor r14, r14
+    33                                  
+    34                                  continue_validation:
+    35                                  
+    36                                  loop_before_point:
+    37 00000020 B800000000                  mov rax, 0
+    38 00000025 4831FF                      xor rdi, rdi
+    39 00000028 438A7C3500                  mov dil, byte [r13+1 *r14]
+    40 0000002D E85C000000                  call is_digit
+    41 00000032 4883F800                    cmp rax, false
+    42 00000036 7405                        je is_it_radix_point
+    43 00000038 49FFC6                      inc r14
+    44 0000003B EBE3                        jmp loop_before_point
+    45                                  is_it_radix_point:
+    46 0000003D 43807C35002E                cmp byte[r13 +1*r14], '.'
+    47 00000043 752C                        jne return_false
+    48                                  start_loop_after_finding_a_point:
+    49 00000045 49FFC6                      inc r14
+    50 00000048 B800000000                  mov rax, 0
+    51 0000004D 4889FF                      mov rdi, rdi
+    52 00000050 438A7C3500                  mov dil, byte[r13+1*r14]
+    53 00000055 E834000000                  call is_digit
+    54 0000005A 4883F800                    cmp rax, false
+    55 0000005E 75E5                        jne start_loop_after_finding_a_point
+    56                                  
+    57 00000060 43807C350100                cmp byte [r13+1+r14], null
+    58 00000066 7509                        jne return_false
+    59 00000068 48C7C0FFFFFFFF              mov rax, true
+    60 0000006F EB05                        jmp restore_gpr_registers
+    61                                  
+    62                                  return_false:
+    63 00000071 B800000000                  mov rax, false
+    64                                  restore_gpr_registers:
+    65 00000076 9D                          popf                                    ;Restore rflags
+    66 00000077 5B                          pop rbx                                 ;Restore rbx
+    67 00000078 415F                        pop r15                                 ;Restore r15
+    68 0000007A 415E                        pop r14                                 ;Restore r14
+    69 0000007C 415D                        pop r13                                 ;Restore r13
+    70 0000007E 415C                        pop r12                                 ;Restore r12
+    71 00000080 415B                        pop r11                                 ;Restore r11
+    72 00000082 415A                        pop r10                                 ;Restore r10
+    73 00000084 4159                        pop r9                                  ;Restore r9
+    74 00000086 4158                        pop r8                                  ;Restore r8
+    75 00000088 59                          pop rcx                                 ;Restore rcx
+    76 00000089 5A                          pop rdx                                 ;Restore rdx
+    77 0000008A 5E                          pop rsi                                 ;Restore rsi
+    78 0000008B 5F                          pop rdi                                 ;Restore rdi
+    79 0000008C 5D                          pop rbp                                 ;Restore rbp
+    80                                  
+    81 0000008D C3                          ret                                     ;Pop the integer stack and jump to the address represented by the popped value.                                        ;Backup rflags
+    82                                  
+    83                                  
+    84                                  
+    85                                  
+    86                                  
+    87                                  
+    88                                  
+    89                                  
+    90                                  
+    91                                  global is_digit:
+    92                                      true equ -1
+    93                                      false equ 0
+    94                                      ascii_value_of_zero equ 0x30
+    95                                      ascii_value_of_nine equ 0x39
+    96                                  
+    97                                      segment .data
+    98                                          ;hellol
+    99                                      segment .bss
+   100                                          ;hello
+   101                                      segment .text
+   102                                      is_digit:
+   103 0000008E 55                              push rbp                                          ;Backup rbp
+   104 0000008F 4889E5                          mov  rbp,rsp                                      ;The base pointer now points to top of stack
+   105 00000092 57                              push rdi                                          ;Backup rdi
+   106 00000093 56                              push rsi                                          ;Backup rsi
+   107 00000094 52                              push rdx                                          ;Backup rdx
+   108 00000095 51                              push rcx                                          ;Backup rcx
+   109 00000096 4150                            push r8                                           ;Backup r8
+   110 00000098 4151                            push r9                                           ;Backup r9
+   111 0000009A 4152                            push r10                                          ;Backup r10
+   112 0000009C 4153                            push r11                                          ;Backup r11
+   113 0000009E 4154                            push r12                                          ;Backup r12
+   114 000000A0 4155                            push r13                                          ;Backup r13
+   115 000000A2 4156                            push r14                                          ;Backup r14
+   116 000000A4 4157                            push r15                                          ;Backup r15
+   117 000000A6 53                              push rbx                                          ;Backup rbx
+   118 000000A7 9C                              pushf                                             ;Backup rflags
+   119 000000A8 41BD00000000                    mov r13, 0
+   120 000000AE 4188FD                          mov r13b, dil
+   121                                  
+   122 000000B1 4983FD30                        cmp r13, ascii_value_of_zero
+   123 000000B5 7C12                            jl is_digit.return_false
+   124                                  
+   125 000000B7 4983FD39                        cmp r13, ascii_value_of_nine
+   126 000000BB 7F0C                            jg is_digit.return_false
+   127                                  
+   128 000000BD 4831C0                          xor rax, rax
+   129 000000C0 48C7C0FFFFFFFF                  mov rax, true
+   130 000000C7 EB08                            jmp is_digit.restore_gpr_registers
+   131                                      is_digit.return_false:
+   132 000000C9 4831C0                          xor rax, rax
+   133 000000CC B800000000                      mov rax, false
+   134                                      is_digit.restore_gpr_registers:
+   135                                          ;Restore all general purpose registers to their original values
+   136 000000D1 9D                              popf                                    ;Restore rflags
+   137 000000D2 5B                              pop rbx                                 ;Restore rbx
+   138 000000D3 415F                            pop r15                                 ;Restore r15
+   139 000000D5 415E                            pop r14                                 ;Restore r14
+   140 000000D7 415D                            pop r13                                 ;Restore r13
+   141 000000D9 415C                            pop r12                                 ;Restore r12
+   142 000000DB 415B                            pop r11                                 ;Restore r11
+   143 000000DD 415A                            pop r10                                 ;Restore r10
+   144 000000DF 4159                            pop r9                                  ;Restore r9
+   145 000000E1 4158                            pop r8                                  ;Restore r8
+   146 000000E3 59                              pop rcx                                 ;Restore rcx
+   147 000000E4 5A                              pop rdx                                 ;Restore rdx
+   148 000000E5 5E                              pop rsi                                 ;Restore rsi
+   149 000000E6 5F                              pop rdi                                 ;Restore rdi
+   150 000000E7 5D                              pop rbp                                 ;Restore rbp
+   151                                  
+   152 000000E8 C3                              ret                                     ;Pop the integer stack and jump to the address represented by the popped value.
+   153                                                      
+   154                                                      

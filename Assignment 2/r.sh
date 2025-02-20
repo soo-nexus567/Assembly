@@ -4,11 +4,12 @@ rm *.out
 # Assemble the x86 file triangle.asm, output object file triangle.o
 nasm -f elf64 -o manager.o manager.asm
 nasm -f elf64 -l input_array.lis -o input_array.o input_array.asm
-# Compile geometry.c
+nasm -f elf64 -l isfloat.lis -o isfloat.o isfloat.asm
+# Compile geoetry.c
 gcc -c -m64 -Wall -fno-pie -no-pie -o main.o main.c
 
 # Link the two object files triangle.o and geometry.o, output executable file learn.out
-gcc -m64 -no-pie -o learn.out input_array.o manager.o main.o -std=c2x -Wall -z noexecstack -lm
+gcc -m64 -no-pie -o learn.out input_array.o manager.o main.o isfloat.o -std=c2x -Wall -z noexecstack -lm
 
 # Next the program will run
 ./learn.out
