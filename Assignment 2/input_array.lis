@@ -1,0 +1,116 @@
+     1                                  global input_array
+     2                                      extern printf
+     3                                      extern scanf
+     4                                      extern isfloat
+     5                                      extern atof
+     6                                      
+     7                                   
+     8                                  segment .data
+     9 00000000 257300                      format_string db "%s", 0
+    10 00000003 496E76616C69642049-         prompt_tryagain db "Invalid Input", 10, 0
+    10 0000000C 6E7075740A00       
+    11                                  
+    12                                  segment .bss
+    13                                      align 64
+    14 00000000 <res 340h>                  storedata resb 832
+    15                                  segment .text
+    16                                      global input_array
+    17                                  input_array:
+    18                                   ; Save the base pointer
+    19 00000000 55                          push    rbp
+    20 00000001 4889E5                      mov     rbp, rsp
+    21                                  
+    22                                      ; Save the general purpose registers
+    23 00000004 53                          push    rbx
+    24 00000005 51                          push    rcx
+    25 00000006 52                          push    rdx
+    26 00000007 56                          push    rsi
+    27 00000008 57                          push    rdi
+    28 00000009 4150                        push    r8 
+    29 0000000B 4151                        push    r9 
+    30 0000000D 4152                        push    r10
+    31 0000000F 4153                        push    r11
+    32 00000011 4154                        push    r12
+    33 00000013 4155                        push    r13
+    34 00000015 4156                        push    r14
+    35 00000017 4157                        push    r15
+    36 00000019 9C                          pushf
+    37                                  
+    38                                  
+    39                                      ;Prompt the user for their last name
+    40 0000001A B807000000                  mov rax, 7
+    41 0000001F BA00000000                  mov rdx, 0
+    42 00000024 0FAE2425[00000000]          xsave [storedata]
+    43                                  
+    44 0000002C 4989FD                      mov r13, rdi
+    45 0000002F 4989F6                      mov r14, rsi
+    46 00000032 41BF00000000                mov r15, 0
+    47 00000038 4881EC00040000              sub rsp, 1024
+    48                                  begin:
+    49 0000003F B800000000                  mov rax, 0 
+    50                                      
+    51 00000044 48BF-                       mov rdi, format_string
+    51 00000046 [0000000000000000] 
+    52 0000004E 4889E6                      mov rsi, rsp
+    53 00000051 E8(00000000)                call scanf
+    54                                  
+    55 00000056 4898                        cdqe
+    56 00000058 4883F8FF                    cmp rax, -1
+    57 0000005C 7434                        je exit
+    58                                  
+    59                                      ; mov rax, 0
+    60                                      ; mov rdi, rsp
+    61                                      ; call isfloat
+    62                                      ; cmp rax, 0
+    63                                      ; je tryagain
+    64                                  
+    65 0000005E B800000000                  mov rax, 0
+    66 00000063 4889E7                      mov rdi, rsp
+    67 00000066 E8(00000000)                call atof
+    68                                  
+    69 0000006B F2430F1144FD00              movsd [r13+r15 * 8], xmm0
+    70                                      
+    71 00000072 49FFC7                      inc r15
+    72 00000075 4D39F7                      cmp r15, r14
+    73 00000078 7CC5                        jl begin
+    74                                  
+    75 0000007A EB16                        jmp exit
+    76                                  
+    77                                  tryagain:
+    78 0000007C B800000000                  mov rax, 0
+    79 00000081 48BF-                       mov rdi, prompt_tryagain
+    79 00000083 [0300000000000000] 
+    80 0000008B E8(00000000)                call printf
+    81 00000090 EBAD                        jmp begin
+    82                                  
+    83                                  exit:
+    84 00000092 4881C400040000              add rsp, 1024
+    85                                  
+    86 00000099 B807000000                  mov rax, 7
+    87 0000009E BA00000000                  mov rdx, 0
+    88 000000A3 0FAE2C25[00000000]          xrstor [storedata]
+    89                                  
+    90 000000AB 4C89F8                      mov rax, r15
+    91                                  
+    92                                  
+    93                                  
+    94                                  
+    95                                       ; Restore the general purpose registers
+    96 000000AE 9D                          popf          
+    97 000000AF 415F                        pop     r15
+    98 000000B1 415E                        pop     r14
+    99 000000B3 415D                        pop     r13
+   100 000000B5 415C                        pop     r12
+   101 000000B7 415B                        pop     r11
+   102 000000B9 415A                        pop     r10
+   103 000000BB 4159                        pop     r9 
+   104 000000BD 4158                        pop     r8 
+   105 000000BF 5F                          pop     rdi
+   106 000000C0 5E                          pop     rsi
+   107 000000C1 5A                          pop     rdx
+   108 000000C2 59                          pop     rcx
+   109 000000C3 5B                          pop     rbx
+   110                                  
+   111                                      ; Restore the base pointer
+   112 000000C4 5D                          pop     rbp
+   113 000000C5 C3                          ret

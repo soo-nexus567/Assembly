@@ -38,10 +38,10 @@
 //   Link: gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -o learn.out triangle.o geometry.o -lm 
 #include <stdio.h>
 
-extern void  manager();
+extern unsigned long  manager();
 int main() {
     printf("Welcome to Array of floating point numbers\n");
     printf("Bought to you by Jonathan Soo\n\n");
-    manager();
+    unsigned long result = manager();
     return 0;
 }
