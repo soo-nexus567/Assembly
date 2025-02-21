@@ -88,10 +88,7 @@ exit:
     xrstor [storedata]
 
     mov rax, r15
-
-
-
-
+    
      ; Restore the general purpose registers
     popf          
     pop     r15

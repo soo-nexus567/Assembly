@@ -127,7 +127,7 @@ global is_digit:
 
         xor rax, rax
         mov rax, true
-        jmp is_digit.restore_gpr_registers
+        jmp is_digit.restore_gpr_regise.ters
     is_digit.return_false:
         xor rax, rax
         mov rax, false
