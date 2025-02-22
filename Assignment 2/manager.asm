@@ -4,6 +4,7 @@ global manager
     extern input_array
     extern output_array
     extern sum
+    extern sort_array
     extern fgets
     extern strlen
     extern stdin
@@ -15,12 +16,14 @@ segment .data
     msg_array_output db "THese number were recieved in this array is: ", 10, 0
     msg_array_sum  db "The sum of the %d numbers in this array is %f", 10, 0
     msg_array_mean db "The arithmetic mean of the numbers in the array is %f", 10, 0
-    fmt_int db "%d", 10, 0
+    msg_array_sort db "This is the array after the sort process completed:", 10, 0
+    fmt_int db "%f", 10, 0
+    results dq 0.0
+    sum_num dq 0.0
 segment .bss
     align 64
     storedata resb 832
     nice_array resq max_array_count
-    results resq 1
 
 segment .text
     global manager
@@ -78,7 +81,7 @@ manager:
     mov rsi,r15
     call sum
     movsd xmm4, xmm0
-    
+    movsd [sum_num], xmm4
     cvtsi2sd xmm1, r15
     divsd xmm4, xmm1
     movsd [results], xmm4
@@ -94,12 +97,26 @@ manager:
     mov rax, 1
     call printf
 
+    mov     rdi, nice_array
+    mov     rsi, r15                
+    call    sort_array
+
+    mov rdi, msg_array_sort
+    mov rax, 1
+    call printf
+
+    mov rdi, nice_array
+    mov rsi, r15
+    call output_array
+
+    movsd xmm0, [sum_num]
+
     mov     rax, 7
     mov     rdx, 0
     xrstor  [storedata]
-    
 
-
+    movsd xmm0, [sum_num]
+    movsd xmm0, xmm0
      ; Restore the general purpose registers
     popf          
     pop     r15

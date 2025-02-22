@@ -37,11 +37,12 @@
 //   Editor: VS Code
 //   Link: gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -o learn.out triangle.o geometry.o -lm 
 #include <stdio.h>
-
-extern unsigned long  manager();
+extern double manager();
 int main() {
     printf("Welcome to Array of floating point numbers\n");
     printf("Bought to you by Jonathan Soo\n\n");
-    unsigned long result = manager();
+    double result = manager();
+    printf("Main recieved %f, and will keep it for future use.\n", result);
+    printf("Main will return 0 to the operating system. Bye'\n");
     return 0;
 }
