@@ -47,7 +47,6 @@ input_array:
     sub rsp, 1024
 begin:
     mov rax, 0 
-    
     mov rdi, format_string
     mov rsi, rsp
     call scanf
@@ -56,11 +55,11 @@ begin:
     cmp rax, -1
     je exit
 
-    ; mov rax, 0
-    ; mov rdi, rsp
-    ; call isfloat
-    ; cmp rax, 0
-    ; je tryagain
+    mov rax, 0
+    mov rdi, rsp
+    call isfloat
+    cmp rax, 0
+    je tryagain
 
     mov rax, 0
     mov rdi, rsp
