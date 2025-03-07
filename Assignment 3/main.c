@@ -37,14 +37,15 @@
 //   Editor: VS Code
 //   Link: gcc -m64 -Wall -fno-pie -no-pie -z noexecstack -o learn.out triangle.o geometry.o -lm 
 #include <stdio.h>
-extern double manager();
+extern double manger();
 int main() {
     char name[50];
-    printf("Welcome to Huron's Triangle. We take care of all your triangle needs.");
+    printf("Welcome to Huron's Triangle. We take care of all your triangle needs.\n");
+    printf("Please enter your name: ");
     scanf("%s", name);
     double area = manger();
     printf("The main function has received this number %.4f, and will keep it for a while.", area);
     printf("Thank you %s. Your patronage is appreciated.", name);
     printf("A zero will not return to the aperating system");
-    return;
+    return 0; 
 }

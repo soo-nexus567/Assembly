@@ -45,16 +45,22 @@ global huron
     extern stdin
     extern input_array
 segment .data
+    result_format db "Area: %lf", 10, 0  ; Format
+    three_float db "%lf %lf %lf",0
     results dq 0.0
     constant dq 2.0
+    fmt db "xmm0: %lf", 10, 0      ; Format string for xmm0
+    fmt1 db "xmm1: %lf", 10, 0      ; Format string for xmm1
+    fmt2 db "xmm3: %lf", 10, 0      ; Format string for xmm3
 segment .bss
     semi_perimeter resq 1
-    side_a resq 1
-    side_b resq 1
-    side_c resq 1
     part_a resq 1
     part_b resq 1
     part_c resq 1
+    area resq 1
+    
+section .text
+    global huron
 huron:
     ; Save the base pointer
     push    rbp
@@ -75,48 +81,42 @@ huron:
     push    r14
     push    r15
     pushf
-    mov r15, rdi
-    mov r14, rsi
-    mov r13, rcx
+   ; Parameters:
+    ; rdi -> address of side_a
+    ; rsi -> address of side_b
+    ; rdx -> address of side_c
 
-    movsd xmm8, qword [r15]
-    movsd xmm9, qword [r14]
-    movsd xmm10, qword [r13]
+    ; Load the sides into xmm registers
+    movsd   xmm0, [rdi]         ; Load side_a into xmm0
+    movsd   xmm1, [rsi]         ; Load side_b into xmm1
+    movsd   xmm2, [rdx]         ; Load side_c into xmm2
 
-    movsd [side_a], xmm8
-    movsd [side_b], xmm9
-    movsd [side_c], xmm10
-    movsd xmm11, [constant]
-    addsd xmm8, xmm9
-    addsd xmm8, xmm10
-    divsd xmm8, xmm11
-    movsd [semi_perimeter], xmm8
+    ; Calculate the semi-perimeter: s = (a + b + c) / 2
+    addsd   xmm0, xmm1          ; xmm0 = side_a + side_b
+    addsd   xmm0, xmm2          ; xmm0 = side_a + side_b + side_c
+    movsd   xmm3, [constant]    ; Load 2.0 into xmm3 (to divide by 2)
+    divsd   xmm0, xmm3          ; xmm0 = (side_a + side_b + side_c) / 2
 
-    movsd xmm12, [semi_perimeter]
-    subsd xmm12, xmm8
+    ; Store the semi-perimeter
+    movsd   [semi_perimeter], xmm0
 
-    movsd xmm13, [semi_perimeter]
-    subsd xmm13, xmm9
+    ; Now, calculate the area using Heron's formula
+    movsd   xmm0, [semi_perimeter]  ; Load semi-perimeter into xmm0
+    subsd   xmm0, [rdi]             ; xmm0 = semi_perimeter - side_a
+    movsd   xmm4, [semi_perimeter]  ; Load semi-perimeter again into xmm4
+    subsd   xmm4, [rsi]             ; xmm4 = semi_perimeter - side_b
+    movsd   xmm5, [semi_perimeter]  ; Load semi-perimeter again into xmm5
+    subsd   xmm5, [rdx]             ; xmm5 = semi_perimeter - side_c
 
-    movsd xmm14, [semi_perimeter]
-    subsd xmm14, xmm10
+    mulsd   xmm0, xmm4              ; xmm0 = (semi_perimeter - side_a) * (semi_perimeter - side_b)
+    mulsd   xmm0, xmm5              ; xmm0 = (semi_perimeter - side_a) * (semi_perimeter - side_b) * (semi_perimeter - side_c)
+    sqrtsd  xmm0, xmm0              ; xmm0 = sqrt(xmm0), which is the area
 
-    movsd xmm15, [semi_perimeter]
-    mulsd xmm12, xmm13
-    mulsd xmm12, xmm14
-    mulsd xmm12, xmm15
+    ; Store the result in the area variable
+    movsd   [area], xmm0
 
-    sqrtsd xmm12, xmm12
-    movsd [results], xmm12
-    
-    mov rax, 0
-    mov rdi, area
-    mov rsi, results 
-    call printf
 
-    ; Restore the general purpose registers
-    movsd [results], xmm0
-    movsd xmm0, xmm0
+
     popf          
     pop     r15
     pop     r14
