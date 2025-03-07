@@ -44,22 +44,14 @@ global manager
     extern cos
     extern stdin
     extern input_array
+    extern huron
 segment .data
     sides_num db "Please enter the sides of your triangle separated by ws: ", 0
     thank_you db "Thank you", 10, 0
     valid_input db "These input have been tested and they are sides of a valid triangle", 10, 0
     huron_applied db "The Huron formula wil lbe applied to find the area", 10, 0
     area db "The area is %.4f sq units. This number will be returned to the caller module.", 10, 0
-    results dq 0.0
-    constant dq 2.0
 segment .bss
-    semi_perimeter resq 1
-    side_a resq 1
-    side_b resq 1
-    side_c resq 1
-    part_a resq 1
-    part_b resq 1
-    part_c resq 1
 manager:
     ; Save the base pointer
     push    rbp
@@ -108,36 +100,12 @@ manager:
     mov rdi, huron_applied
     call printf 
 
-    movsd xmm8, qword [rsp]
-    movsd xmm9, qword [rsp+8]
-    movsd xmm10, qword [rsp +16]
+    mov rdi, rsp
+    mov rsi, rsp+8
+    mov rcx, rsp+16
+    call huron
+    movsd results, [xmm0]
 
-    movsd [side_a], xmm8
-    movsd [side_b], xmm9
-    movsd [side_c], xmm10
-    movsd xmm11, [constant]
-    addsd xmm8, xmm9
-    addsd xmm8, xmm10
-    divsd xmm8, xmm11
-    movsd [semi_perimeter], xmm8
-
-    movsd xmm12, [semi_perimeter]
-    subsd xmm12, xmm8
-
-    movsd xmm13, [semi_perimeter]
-    subsd xmm13, xmm9
-
-    movsd xmm14, [semi_perimeter]
-    subsd xmm14, xmm10
-
-    movsd xmm15, [semi_perimeter]
-    mulsd xmm12, xmm13
-    mulsd xmm12, xmm14
-    mulsd xmm12, xmm15
-
-    sqrtsd xmm12, xmm12
-    movsd [results], xmm12
-    
     mov rax, 0
     mov rdi, area
     mov rsi, results 
