@@ -215,7 +215,7 @@ begin:
     cdqe
     cmp     rax, -1
     je      exit
-
+    
     ; Check if the input is a float
     mov     rax, 0
     mov     rdi, rsp
