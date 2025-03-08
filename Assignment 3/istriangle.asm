@@ -65,10 +65,12 @@ istriangle:
     push    r14
     push    r15
     pushf
-        ; Check if any side is non-positive
+
+    ; Check if any side is non-positive
     movsd xmm0, [rdi]           ; Load side 1 into xmm0
     movsd xmm1, [rsi]           ; Load side 2 into xmm1
     movsd xmm2, [rdx]           ; Load side 3 into xmm2
+    xorpd xmm3, xmm3            ; Set xmm3 to 0 (for comparison with 0)
 
     ; Check if any side <= 0
     comisd xmm0, xmm3         ; Compare side 1 with 0
@@ -82,21 +84,24 @@ istriangle:
 
     ; Check triangle inequality: side1 + side2 > side3
     movsd xmm0, [rdi]           ; side1
-    addsd xmm0, xmm1          ; side1 + side2
-    comisd xmm0, xmm2         ; Compare (side1 + side2) with side3
+    addsd xmm0, xmm1            ; side1 + side2
+    comisd xmm0, xmm2           ; Compare (side1 + side2) with side3
     jbe invalid_triangle
 
     ; Check: side1 + side3 > side2
     movsd xmm0, [rdi]           ; side1
-    addsd xmm0, xmm2          ; side1 + side3
-    comisd xmm0, xmm1         ; Compare (side1 + side3) with side2
+    addsd xmm0, xmm2            ; side1 + side3
+    comisd xmm0, xmm1           ; Compare (side1 + side3) with side2
     jbe invalid_triangle
 
     ; Check: side2 + side3 > side1
     movsd xmm0, [rsi]           ; side2
-    addsd xmm0, xmm2          ; side2 + side3
-    comisd xmm0, xmm1         ; Compare (side2 + side3) with side1
+    addsd xmm0, xmm2            ; side2 + side3
+    comisd xmm0, xmm1           ; Compare (side2 + side3) with side1
     jbe invalid_triangle
+
+    mov rax, 1
+    ; If all checks pass, the triangle is valid
     popf          
     pop     r15
     pop     r14
@@ -116,7 +121,7 @@ istriangle:
     pop     rbp
     ret
 invalid_triangle:
-    mov rax, 1
+    mov rax, -1
     popf          
     pop     r15
     pop     r14

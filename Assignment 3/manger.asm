@@ -31,22 +31,31 @@ global manger
     extern isfloat
     extern atof
     extern huron
+    extern istriangle
 
 array_size equ 12
 
 segment .data
     prompt_input db "For the array enter a sequence of 64-bit floats separated by white space.", 10,"After the last input press enter followed by Control+D:", 10, 0
     output_count db "Array count is %lu", 10, 0
+    valid_input db "These inputs have been tested and they are sides of a valid triangle.", 10, 0
+    huron_applied db "The Huron formula will be applied to find the area.", 10, 0
+    huron_area db "The area is %f sq units. This number will be returned to the caller module.", 10, 0
     format_string db "%s", 0
     format_string1 db "%f", 0
     prompt_tryagain db "That ain't no float, try again", 10, 0
-    three_inputs db "Too many inputs! The program will now exit.", 10, 0
-    huron_applied db "Area: %lf", 10, 0
+    three_inputs db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 0
+    invalid db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 0
     results dq 0.0
+    negative_one dq -1.0
 segment .bss
     align 64
     storedata resb 832
     nice_array resq array_size
+    side_a resq 1
+    side_b resq 1
+    side_c resq 1
+    area resq 1
 segment .text
 manger:
     ; Back up GPRs
@@ -92,22 +101,47 @@ manger:
 
     ; Output the array count
     cmp r15, 3
-    jg more_than_three
+    jg no_triangle
 
     movsd   xmm0, [nice_array]  
-    movsd [ ], xmm0   ; Load the first element (side_a) into xmm0
+    movsd [side_a], xmm0   ; Load the first element (side_a) into xmm0
+    movsd   xmm1, [nice_array+8]  
+    movsd [side_b], xmm1   ; Load the first element (side_a) into xmm0
+    movsd   xmm1, [nice_array+16]  
+    movsd [side_c], xmm1   ; Load the first element (side_a) into xmm0
+    
+    mov     rdi, side_a
+    mov     rsi, side_b               ; Pass the value in xmm0 as the second argument (float)
+    mov     rdx, side_c
+    call    istriangle
+
+    cmp rax, -1
+    je no_triangle
+
+    mov rax, 0
+    mov rdi, valid_input
+    call printf
+
+    mov rax, 0
+    mov rdi, huron_applied
+    call printf
 
     ; Print the first value using printf
-    mov     rdi, format_string1      ; Address of the format string "%f"
-    mov     rsi, results               ; Pass the value in xmm0 as the second argument (float)
-    call    printf                  ; Call printf to print the value
+    mov     rdi, side_a
+    mov     rsi, side_b               ; Pass the value in xmm0 as the second argument (float)
+    mov     rdx, side_c
+    call    huron
+    movsd [area], xmm0
+
+    mov     rdi, huron_area       ; Format string for printf
+    movsd   xmm0, [area]             ; Load the area value into xmm0
+    mov     rax, 1                   ; 1 floating-point argument
+    call    printf                   ; Call printf to print the area
+
+
     
 
-    ; movsd [results], xmm0
-    ; mov rax, 0
-    ; mov rdi, huron_applied
-    ; mov rsi, results
-    ; call printf
+    
 
     ; Restore all the floating-point numbers
     mov     rax, 7
@@ -223,6 +257,29 @@ exit:
 
     mov     rax, r15
 
+    ;Restore the original values to the GPRs
+    popf          
+    pop     r15
+    pop     r14
+    pop     r13
+    pop     r12
+    pop     r11
+    pop     r10
+    pop     r9 
+    pop     r8 
+    pop     rdi
+    pop     rsi
+    pop     rdx
+    pop     rcx
+    pop     rbx
+    pop     rbp
+
+    ret
+no_triangle:
+    mov rax, 0
+    mov rdi, invalid
+    call printf
+    movsd xmm0, [negative_one]
     ;Restore the original values to the GPRs
     popf          
     pop     r15
