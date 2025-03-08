@@ -290,5 +290,3 @@ pop rdi                                 ;Restore rdi
 pop rbp                                 ;Restore rbp
 
 ret                                     ;Pop the integer stack and jump to the address represented by the popped value.
-
-

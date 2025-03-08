@@ -290,5 +290,3 @@
    290 000000F8 5D                      pop rbp                                 ;Restore rbp
    291                                  
    292 000000F9 C3                      ret                                     ;Pop the integer stack and jump to the address represented by the popped value.
-   293                                  
-   294                                  

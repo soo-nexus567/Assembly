@@ -6,7 +6,7 @@ global input_array
     
  
 segment .data
-    format_string db "%s", 0
+    format_string db "%lf", 0
     prompt_tryagain db "Invalid Input", 10, 0
 
 segment .bss
@@ -36,15 +36,7 @@ input_array:
     pushf
 
 
-    ;Prompt the user for their last name
-    mov rax, 7
-    mov rdx, 0
-    xsave [storedata]
-
-    mov r13, rdi
-    mov r14, rsi
-    mov r15, 0
-    sub rsp, 1024
+    
 begin:
     mov rax, 0 
     mov rdi, format_string
