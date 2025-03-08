@@ -1,0 +1,228 @@
+     1                                  max_array_count equ 15
+     2                                  
+     3                                  global manger
+     4                                      extern printf
+     5                                      extern scanf
+     6                                      extern fgets
+     7                                      extern strlen
+     8                                      extern cos
+     9                                      extern stdin
+    10                                      extern huron
+    11                                      extern isfloat
+    12                                      extern istriangle
+    13                                      extern atof
+    14                                  array_size equ 12
+    15                                  segment .data
+    16 00000000 506C6561736520656E-         sides_num db "Please enter the sides of your triangle separated by ws: ", 0
+    16 00000009 746572207468652073-
+    16 00000012 69646573206F662079-
+    16 0000001B 6F757220747269616E-
+    16 00000024 676C65207365706172-
+    16 0000002D 617465642062792077-
+    16 00000036 733A2000           
+    17 0000003A 5468616E6B20796F75-         thank_you db "Thank you", 10, 0
+    17 00000043 0A00               
+    18 00000045 546865736520696E70-         valid_input db "These inputs have been tested and they are sides of a valid triangle", 10, 0
+    18 0000004E 757473206861766520-
+    18 00000057 6265656E2074657374-
+    18 00000060 656420616E64207468-
+    18 00000069 657920617265207369-
+    18 00000072 646573206F66206120-
+    18 0000007B 76616C696420747269-
+    18 00000084 616E676C650A00     
+    19 0000008B 546865204875726F6E-         huron_applied db "The Huron formula will be applied to find the area", 10, 0
+    19 00000094 20666F726D756C6120-
+    19 0000009D 77696C6C2062652061-
+    19 000000A6 70706C69656420746F-
+    19 000000AF 2066696E6420746865-
+    19 000000B8 20617265610A00     
+    20 000000BF 496E76616C69642069-         invalid_msg db "Invalid input. Try again.", 10, 0
+    20 000000C8 6E7075742E20547279-
+    20 000000D1 20616761696E2E0A00 
+    21 000000DA 256C6620256C662025-         three_float db "%lf %lf %lf", 0
+    21 000000E3 6C6600             
+    22 000000E6 526573756C74732025-         one_float db "Results %lf", 10, 0
+    22 000000EF 6C660A00           
+    23 000000F3 0000000000000000            results dq 0.0
+    24 000000FB 417265613A20256C66-         result_format db "Area: %lf", 10, 0
+    24 00000104 0A00               
+    25 00000106 0000000000000040            constant dq 2.0
+    26 0000010E 256C6600                    format_string db "%lf", 0
+    27 00000112 496E76616C69642049-         prompt_tryagain db "Invalid Input", 10, 0
+    27 0000011B 6E7075740A00       
+    28                                  
+    29                                  segment .bss
+    30                                      align 64
+    31 00000000 <res 340h>                  storedata resb 832
+    32 00000340 <res 40h>                   input_buffer resb 64           ; Reserve space for input buffer
+    33 00000380 ????????????????            semi_perimeter resq 1
+    34 00000388 ????????????????            side_a resq 1
+    35 00000390 ????????????????            side_b resq 1
+    36 00000398 ????????????????            side_c resq 1
+    37 000003A0 ????????????????            part_a resq 1
+    38 000003A8 ????????????????            part_b resq 1
+    39 000003B0 ????????????????            part_c resq 1
+    40 000003B8 ????????????????            area resq 1                   ; Reserve space for the area result
+    41 000003C0 <res 78h>                   nice_array resq max_array_count
+    42                                  segment .text
+    43                                      global manger
+    44                                  
+    45                                  manger:
+    46                                      ; Save the base pointer
+    47 00000000 55                          push    rbp
+    48 00000001 4889E5                      mov     rbp, rsp
+    49                                  
+    50                                      ; Save the general purpose registers
+    51 00000004 53                          push    rbx
+    52 00000005 51                          push    rcx
+    53 00000006 52                          push    rdx
+    54 00000007 56                          push    rsi
+    55 00000008 57                          push    rdi
+    56 00000009 4150                        push    r8 
+    57 0000000B 4151                        push    r9 
+    58 0000000D 4152                        push    r10
+    59 0000000F 4153                        push    r11
+    60 00000011 4154                        push    r12
+    61 00000013 4155                        push    r13
+    62 00000015 4156                        push    r14
+    63 00000017 4157                        push    r15
+    64 00000019 9C                          pushf
+    65 0000001A B807000000                  mov     rax, 7
+    66 0000001F BA00000000                  mov     rdx, 0
+    67 00000024 0FAE2425[00000000]          xsave   [storedata]
+    68                                      ; Ask for triangle sides
+    69 0000002C B800000000                  mov rax, 0
+    70 00000031 48BF-                       mov rdi, sides_num
+    70 00000033 [0000000000000000] 
+    71 0000003B E8(00000000)                call printf
+    72                                  
+    73                                      ; Call input_array function
+    74 00000040 48BF-                       mov     rdi, nice_array
+    74 00000042 [C003000000000000] 
+    75 0000004A BE0C000000                  mov     rsi, array_size
+    76 0000004F E81B000000                  call    input_array
+    77 00000054 4989C7                      mov     r15, rax
+    78                                  
+    79                                      ; Further processing (validation and area calculation)
+    80                                      ; Implement additional logic as needed
+    81                                      ; Restore the general purpose registers
+    82 00000057 9D                          popf          
+    83 00000058 415F                        pop     r15
+    84 0000005A 415E                        pop     r14
+    85 0000005C 415D                        pop     r13
+    86 0000005E 415C                        pop     r12
+    87 00000060 415B                        pop     r11
+    88 00000062 415A                        pop     r10
+    89 00000064 4159                        pop     r9 
+    90 00000066 4158                        pop     r8 
+    91 00000068 5F                          pop     rdi
+    92 00000069 5E                          pop     rsi
+    93 0000006A 5A                          pop     rdx
+    94 0000006B 59                          pop     rcx
+    95 0000006C 5B                          pop     rbx
+    96                                  
+    97                                      ; Restore the base pointer
+    98 0000006D 5D                          pop     rbp
+    99 0000006E C3                          ret
+   100                                  
+   101                                  input_array:
+   102                                      ; Back up GPRs
+   103 0000006F 55                          push    rbp
+   104 00000070 4889E5                      mov     rbp, rsp
+   105 00000073 53                          push    rbx
+   106 00000074 51                          push    rcx
+   107 00000075 52                          push    rdx
+   108 00000076 56                          push    rsi
+   109 00000077 57                          push    rdi
+   110 00000078 4150                        push    r8 
+   111 0000007A 4151                        push    r9 
+   112 0000007C 4152                        push    r10
+   113 0000007E 4153                        push    r11
+   114 00000080 4154                        push    r12
+   115 00000082 4155                        push    r13
+   116 00000084 4156                        push    r14
+   117 00000086 4157                        push    r15
+   118 00000088 9C                          pushf
+   119                                  
+   120                                      ; Save all the floating-point numbers
+   121 00000089 B807000000                  mov     rax, 7
+   122 0000008E BA00000000                  mov     rdx, 0
+   123 00000093 0FAE2425[00000000]          xsave   [storedata]
+   124                                  
+   125 0000009B 4989FD                      mov     r13, rdi    ; r13 contains the array
+   126 0000009E 4989F6                      mov     r14, rsi    ; r14 contains the max size
+   127 000000A1 41BF00000000                mov     r15, 0      ; r15 is the index of the loop
+   128 000000A7 4881EC00040000              sub     rsp, 1024   ; Create a 1024 bits temporary space on the stack
+   129                                  
+   130                                  begin:
+   131 000000AE B800000000                  mov     rax, 0
+   132 000000B3 48BF-                       mov     rdi, format_string
+   132 000000B5 [0E01000000000000] 
+   133 000000BD 4889E6                      mov     rsi, rsp
+   134 000000C0 E8(00000000)                call    scanf
+   135                                  
+   136                                      ; Check if the input is a Ctrl-D
+   137 000000C5 4898                        cdqe
+   138 000000C7 4883F8FF                    cmp     rax, -1
+   139 000000CB 7447                        je      exit
+   140                                  
+   141                                      ; Check if the input is a float
+   142 000000CD B800000000                  mov     rax, 0
+   143 000000D2 4889E7                      mov     rdi, rsp
+   144 000000D5 E8(00000000)                call    isfloat
+   145 000000DA 4883F800                    cmp     rax, 0
+   146 000000DE 741E                        je      tryagain
+   147                                  
+   148                                      ; Convert the input into a float
+   149 000000E0 B800000000                  mov     rax, 0
+   150 000000E5 4889E7                      mov     rdi, rsp
+   151 000000E8 E8(00000000)                call    atof
+   152                                  
+   153                                      ; Copy the float into the array
+   154 000000ED F2430F1144FD00              movsd   [r13 + r15 * 8], xmm0
+   155                                  
+   156                                      ; Increase r15, repeat the loop if r15 is less than the max size
+   157 000000F4 49FFC7                      inc     r15
+   158 000000F7 4D39F7                      cmp     r15, r14
+   159 000000FA 7CB2                        jl      begin
+   160                                  
+   161                                      ; Jump to exit otherwise
+   162 000000FC EB16                        jmp     exit      
+   163                                  
+   164                                  tryagain:
+   165                                      ; Prompt the user to try again and repeat the loop
+   166 000000FE B800000000                  mov     rax, 0
+   167 00000103 48BF-                       mov     rdi, prompt_tryagain
+   167 00000105 [1201000000000000] 
+   168 0000010D E8(00000000)                call    printf
+   169 00000112 EB9A                        jmp     begin
+   170                                  
+   171                                  exit:
+   172                                      ; Get rid of the 1024 bits temporary space on the stack
+   173 00000114 4881C400040000              add     rsp, 1024
+   174                                  
+   175                                      ; Restore all the floating-point numbers
+   176 0000011B B807000000                  mov     rax, 7
+   177 00000120 BA00000000                  mov     rdx, 0
+   178 00000125 0FAE2C25[00000000]          xrstor  [storedata]
+   179                                  
+   180 0000012D 4C89F8                      mov     rax, r15
+   181                                  
+   182                                      ;Restore the original values to the GPRs
+   183 00000130 9D                          popf          
+   184 00000131 415F                        pop     r15
+   185 00000133 415E                        pop     r14
+   186 00000135 415D                        pop     r13
+   187 00000137 415C                        pop     r12
+   188 00000139 415B                        pop     r11
+   189 0000013B 415A                        pop     r10
+   190 0000013D 4159                        pop     r9 
+   191 0000013F 4158                        pop     r8 
+   192 00000141 5F                          pop     rdi
+   193 00000142 5E                          pop     rsi
+   194 00000143 5A                          pop     rdx
+   195 00000144 59                          pop     rcx
+   196 00000145 5B                          pop     rbx
+   197 00000146 5D                          pop     rbp
+   198                                  
+   199 00000147 C3                          ret

@@ -1,10 +1,11 @@
-%ifndef TRIANGLE_INC
-#define TRIANGLE_INC
-global triangle
-    extern printf
-section .data
-    array_line1 db "This program is brought to you as a courtesy of", 10, "Author: Jonathan Soo", 10, "CWID: 884776980", 10, "Email: jonathansoo07@csu.fullerton.edu", 10
-%macro back_up_register 0
+
+
+array_line1 db 10, "This program is brought to you as a courtesy of", 10, "Author: Jonathan Soo", 10, "CWID: 884776980", 10, "Email: jonathansoo07@csu.fullerton.edu", 10, 10,  0
+%macro back_register 0    ;ar = activation record
+    push    rbp
+    mov     rbp, rsp
+
+    ; Save the general purpose registers
     push    rbx
     push    rcx
     push    rdx
@@ -20,12 +21,23 @@ section .data
     push    r15
     pushf
 %endmacro
+%macro backup_compnents 1
+;This macro backs up all registers except GPRs to an array specified in parameter %1
+   mov rax,7
+   mov rdx,0
+   xsave [%1]
+%endmacrop
+%macro restore_components 1
+   mov rax,7
+   mov rdx,0
+   xrstor [%1]
+%endmacro
 %macro print_info 0
     mov rax, 0
     mov rdi, array_line1
     call printf
 %endmacro
-%macro restore_register 0
+%macro restore_registers 0
     popf          
     pop     r15
     pop     r14
@@ -40,4 +52,7 @@ section .data
     pop     rdx
     pop     rcx
     pop     rbx
+
+    ; Restore the base pointer
+    pop     rbp
 %endmacro

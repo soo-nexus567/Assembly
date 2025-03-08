@@ -61,26 +61,10 @@ segment .bss
     
 section .text
     global huron
+    %include "triangle.inc"
 huron:
     ; Save the base pointer
-    push    rbp
-    mov     rbp, rsp
-
-    ; Save the general purpose registers
-    push    rbx
-    push    rcx
-    push    rdx
-    push    rsi
-    push    rdi
-    push    r8 
-    push    r9 
-    push    r10
-    push    r11
-    push    r12
-    push    r13
-    push    r14
-    push    r15
-    pushf
+    back_register
    ; Parameters:
     ; rdi -> address of side_a
     ; rsi -> address of side_b
@@ -108,8 +92,10 @@ huron:
     movsd   xmm5, [semi_perimeter]  ; Load semi-perimeter again into xmm5
     subsd   xmm5, [rdx]             ; xmm5 = semi_perimeter - side_c
 
+    movsd xmm6, [semi_perimeter]
     mulsd   xmm0, xmm4              ; xmm0 = (semi_perimeter - side_a) * (semi_perimeter - side_b)
     mulsd   xmm0, xmm5              ; xmm0 = (semi_perimeter - side_a) * (semi_perimeter - side_b) * (semi_perimeter - side_c)
+    mulsd   xmm0, xmm6
     sqrtsd  xmm0, xmm0              ; xmm0 = sqrt(xmm0), which is the area
 
     ; Store the result in the area variable
@@ -117,21 +103,5 @@ huron:
 
 
 
-    popf          
-    pop     r15
-    pop     r14
-    pop     r13
-    pop     r12
-    pop     r11
-    pop     r10
-    pop     r9 
-    pop     r8 
-    pop     rdi
-    pop     rsi
-    pop     rdx
-    pop     rcx
-    pop     rbx
-
-    ; Restore the base pointer
-    pop     rbp
+    restore_registers
     ret

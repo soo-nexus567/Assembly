@@ -45,26 +45,10 @@ segment .bss
     ; Temporary input buffer
 segment .text
     global istriangle
+    %include "triangle.inc"
 istriangle:
     ; Save the base pointer
-    push    rbp
-    mov     rbp, rsp
-
-    ; Save the general purpose registers
-    push    rbx
-    push    rcx
-    push    rdx
-    push    rsi
-    push    rdi
-    push    r8 
-    push    r9 
-    push    r10
-    push    r11
-    push    r12
-    push    r13
-    push    r14
-    push    r15
-    pushf
+    back_register
 
     ; Check if any side is non-positive
     movsd xmm0, [rdi]           ; Load side 1 into xmm0
@@ -102,41 +86,9 @@ istriangle:
 
     mov rax, 1
     ; If all checks pass, the triangle is valid
-    popf          
-    pop     r15
-    pop     r14
-    pop     r13
-    pop     r12
-    pop     r11
-    pop     r10
-    pop     r9 
-    pop     r8 
-    pop     rdi
-    pop     rsi
-    pop     rdx
-    pop     rcx
-    pop     rbx
-
-    ; Restore the base pointer
-    pop     rbp
+    restore_registers
     ret
 invalid_triangle:
     mov rax, -1
-    popf          
-    pop     r15
-    pop     r14
-    pop     r13
-    pop     r12
-    pop     r11
-    pop     r10
-    pop     r9 
-    pop     r8 
-    pop     rdi
-    pop     rsi
-    pop     rdx
-    pop     rcx
-    pop     rbx
-
-    ; Restore the base pointer
-    pop     rbp
+    restore_registers
     ret

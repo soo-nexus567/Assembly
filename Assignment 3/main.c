@@ -39,13 +39,17 @@
 #include <stdio.h>
 extern double manger();
 int main() {
-    char name[50];
+    char name[100];
     printf("Welcome to Huron's Triangle. We take care of all your triangle needs.\n");
     printf("Please enter your name: ");
-    scanf("%s", name);
+    scanf("%99[^\n]%*c", name);
     double area = manger();
-    printf("The main function has received this number %.4f, and will keep it for a while.", area);
-    printf("Thank you %s. Your patronage is appreciated.", name);
-    printf("A zero will not return to the aperating system");
+    printf("The main function has received this number %.4f, and will keep it for a while.\n", area);
+    printf("Thank you %s. Your patronage is appreciated.\n", name);
+    if (area == -1){
+        printf("A -1 will not return to the aperating system\n");
+        return -1;
+    }
+    printf("A zero will not return to the aperating system\n");
     return 0; 
 }

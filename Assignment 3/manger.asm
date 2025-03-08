@@ -28,12 +28,13 @@ global manger
 
     extern scanf
     extern printf
-    extern isfloat
     extern atof
     extern huron
     extern istriangle
-
 array_size equ 12
+null equ 0
+true equ -1
+false equ 0
 
 segment .data
     prompt_input db "For the array enter a sequence of 64-bit floats separated by white space.", 10,"After the last input press enter followed by Control+D:", 10, 0
@@ -46,6 +47,7 @@ segment .data
     prompt_tryagain db "That ain't no float, try again", 10, 0
     three_inputs db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 0
     invalid db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 0
+    thank_you db "Thank you", 10, 0
     results dq 0.0
     negative_one dq -1.0
 segment .bss
@@ -57,29 +59,12 @@ segment .bss
     side_c resq 1
     area resq 1
 segment .text
+    %include "triangle.inc"
 manger:
     ; Back up GPRs
-    push    rbp
-    mov     rbp, rsp
-    push    rbx
-    push    rcx
-    push    rdx
-    push    rsi
-    push    rdi
-    push    r8 
-    push    r9 
-    push    r10
-    push    r11
-    push    r12
-    push    r13
-    push    r14
-    push    r15
-    pushf
-
+back_register
     ; Save all the floating-point numbers
-    mov     rax, 7
-    mov     rdx, 0
-    xsave   [storedata]
+    backup_compnents storedata
 
     ; Prompt the input instruction
     mov     rax,0
@@ -109,7 +94,9 @@ manger:
     movsd [side_b], xmm1   ; Load the first element (side_a) into xmm0
     movsd   xmm1, [nice_array+16]  
     movsd [side_c], xmm1   ; Load the first element (side_a) into xmm0
-    
+    mov rax, 0
+    mov rdi, thank_you
+    call printf
     mov     rdi, side_a
     mov     rsi, side_b               ; Pass the value in xmm0 as the second argument (float)
     mov     rdx, side_c
@@ -147,25 +134,11 @@ manger:
     mov     rax, 7
     mov     rdx, 0
     xrstor  [storedata]
-
     mov     rax, r15
-
+    movsd   xmm0, [area]
+    movsd xmm0, xmm0
     ;Restore the original values to the GPRs
-    popf          
-    pop     r15
-    pop     r14
-    pop     r13
-    pop     r12
-    pop     r11
-    pop     r10
-    pop     r9 
-    pop     r8 
-    pop     rdi
-    pop     rsi
-    pop     rdx
-    pop     rcx
-    pop     rbx
-    pop     rbp
+    restore_registers
 
     ret
 more_than_three:
@@ -178,22 +151,7 @@ more_than_three:
     jmp     exit
 input_array:
     ; Back up GPRs
-    push    rbp
-    mov     rbp, rsp
-    push    rbx
-    push    rcx
-    push    rdx
-    push    rsi
-    push    rdi
-    push    r8 
-    push    r9 
-    push    r10
-    push    r11
-    push    r12
-    push    r13
-    push    r14
-    push    r15
-    pushf
+    back_register
 
     ; Save all the floating-point numbers
     mov     rax, 7
@@ -254,25 +212,11 @@ exit:
     mov     rax, 7
     mov     rdx, 0
     xrstor  [storedata]
-
     mov     rax, r15
 
+
     ;Restore the original values to the GPRs
-    popf          
-    pop     r15
-    pop     r14
-    pop     r13
-    pop     r12
-    pop     r11
-    pop     r10
-    pop     r9 
-    pop     r8 
-    pop     rdi
-    pop     rsi
-    pop     rdx
-    pop     rcx
-    pop     rbx
-    pop     rbp
+    restore_registers
 
     ret
 no_triangle:
@@ -281,20 +225,162 @@ no_triangle:
     call printf
     movsd xmm0, [negative_one]
     ;Restore the original values to the GPRs
-    popf          
-    pop     r15
-    pop     r14
-    pop     r13
-    pop     r12
-    pop     r11
-    pop     r10
-    pop     r9 
-    pop     r8 
-    pop     rdi
-    pop     rsi
-    pop     rdx
-    pop     rcx
-    pop     rbx
-    pop     rbp
-
+    restore_registers
     ret
+isfloat:
+
+; Back up registers to protect caller data
+push rbp
+mov  rbp,rsp
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
+push r12
+push r13
+push r14
+push r15
+push rbx
+pushf
+
+; Make a copy of the passed-in array of ASCII values
+mov r13, rdi
+xor r14, r14  ; Initialize r14 as the array index
+
+; Check for leading '+' or '-' signs
+cmp byte [r13], '+'  ; Check for '+'
+je increment_index
+cmp byte [r13], '-'  ; Check for '-'
+jne continue_validation
+
+increment_index:
+inc r14
+
+continue_validation:
+
+; Loop to validate chars before the decimal point
+loop_before_point:
+   mov rax, 0
+   xor rdi, rdi  ; Zero out rdi
+   mov dil, byte [r13 + r14]  ; Load the next byte into rdi
+   call is_digit
+   cmp rax, false
+   je is_it_radix_point
+   inc r14
+   jmp loop_before_point
+
+is_it_radix_point:
+; Check if the next character is a radix point '.'
+cmp byte [r13 + r14], '.'
+jne return_false  ; If not, return false (invalid input)
+
+; Loop to validate digits after the radix point
+start_loop_after_finding_a_point:
+    inc r14
+    mov rax, 0
+    xor rdi, rdi
+    mov dil, byte [r13 + r14]
+    call is_digit
+    cmp rax, false
+    jne start_loop_after_finding_a_point
+
+; Check for end of string (null terminator)
+cmp byte [r13 + r14], null
+jne return_false  ; If it's not the end of the string, return false
+mov rax, true  ; Return true if a valid float
+
+jmp restore_gpr_registers
+
+return_false:
+mov rax, false  ; Return false if input is not a valid float
+
+restore_gpr_registers:
+; Restore all general purpose registers
+popf
+pop rbx
+pop r15
+pop r14
+pop r13
+pop r12
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
+pop rbp
+
+ret
+
+
+;=================== is_digit function ==========================
+
+true equ -1
+false equ 0
+ascii_value_of_zero equ 0x30
+ascii_value_of_nine equ 0x39
+
+segment .text
+is_digit:
+; Back up registers
+push rbp
+mov rbp, rsp
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
+push r12
+push r13
+push r14
+push r15
+push rbx
+pushf
+
+; Copy the passed-in character (rdi) to r13
+mov r13b, dil
+
+; Check if the character is between '0' and '9'
+cmp r13b, ascii_value_of_zero
+jl is_digit_return_false
+cmp r13b, ascii_value_of_nine
+jg is_digit_return_false
+
+; Return true if it's a valid digit
+xor rax, rax
+mov rax, true
+
+jmp is_digit_restore_gpr_registers
+
+is_digit_return_false:
+xor rax, rax
+mov rax, false
+
+is_digit_restore_gpr_registers:
+; Restore registers
+popf
+pop rbx
+pop r15
+pop r14
+pop r13
+pop r12
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
+pop rbp
+
+ret
