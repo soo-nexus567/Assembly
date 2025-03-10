@@ -26,7 +26,7 @@ array_line1 db 10, "This program is brought to you as a courtesy of", 10, "Autho
    mov rax,7
    mov rdx,0
    xsave [%1]
-%endmacrop
+%endmacro
 %macro restore_components 1
    mov rax,7
    mov rdx,0
