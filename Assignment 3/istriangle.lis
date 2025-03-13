@@ -40,13 +40,13 @@
     40                                  ; Assemble   : nasm -f elf64 -l istriangle.lis -o istriangle.o         |   
     41                                  ;              istriangle.asm                                          |  
     42                                  ; Editor     : VS Code                                                 |  
-    43                                  ; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |   
-    44                                  ;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
+    43                                  ; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         | 
+    44                                  ;              istriangle.o triangle.o -std=c2x -Wall -z noexecstack -lm 
     45                                  ;======================================================================|  
     46                                  
     47                                  
-    48                                  global manger
-    49                                  extern printf
+    48                                  global istriangle
+    49                                      extern printf
     50                                  
     51                                  segment .data
     52 00000000 546865736520736964-         invalid_triangle_msg db "These sides do not form a valid triangle.", 10, 0
@@ -172,38 +172,38 @@
     75                                      ; ┌────────────────────────────────────────────────────────┐
     76                                      ; │ Check if any side <= 0                                 │
     77                                      ; └────────────────────────────────────────────────────────┘
-    78 000000A9 660F2FE7                    comisd xmm4, xmm7
-    79 000000AD 7653                        jbe invalid_triangle
+    78 000000A9 660F2EE7                    ucomisd xmm4, xmm7
+    79 000000AD 7453                        je invalid_triangle
     80                                  
-    81 000000AF 660F2FEF                    comisd xmm5, xmm7
-    82 000000B3 764D                        jbe invalid_triangle
+    81 000000AF 660F2EEF                    ucomisd xmm5, xmm7
+    82 000000B3 744D                        je invalid_triangle
     83                                  
-    84 000000B5 660F2FF7                    comisd xmm6, xmm7
-    85 000000B9 7647                        jbe invalid_triangle
+    84 000000B5 660F2EF7                    ucomisd xmm6, xmm7
+    85 000000B9 7447                        je invalid_triangle
     86                                  
     87                                      ; ┌────────────────────────────────────────────────────────┐
     88                                      ; │ Check triangle inequality: side1 + side2 > side3       │
     89                                      ; └────────────────────────────────────────────────────────┘
     90 000000BB F20F1027                    movsd xmm4, [rdi]
     91 000000BF F20F58E5                    addsd xmm4, xmm5
-    92 000000C3 660F2FE6                    comisd xmm4, xmm6
-    93 000000C7 7639                        jbe invalid_triangle
+    92 000000C3 660F2EE6                    ucomisd xmm4, xmm6
+    93 000000C7 7439                        je invalid_triangle
     94                                  
     95                                      ; ┌────────────────────────────────────────────────────────┐
     96                                      ; │ Check: side1 + side3 > side2                           │
     97                                      ; └────────────────────────────────────────────────────────┘
     98 000000C9 F20F1027                    movsd xmm4, [rdi]
     99 000000CD F20F58E6                    addsd xmm4, xmm6
-   100 000000D1 660F2FE5                    comisd xmm4, xmm5
-   101 000000D5 762B                        jbe invalid_triangle
+   100 000000D1 660F2EE5                    ucomisd xmm4, xmm5
+   101 000000D5 742B                        je invalid_triangle
    102                                  
    103                                      ; ┌────────────────────────────────────────────────────────┐
    104                                      ; │ Check: side2 + side3 > side1                           │
    105                                      ; └────────────────────────────────────────────────────────┘
    106 000000D7 F20F1026                    movsd xmm4, [rsi]
    107 000000DB F20F58E6                    addsd xmm4, xmm6
-   108 000000DF 660F2FE7                    comisd xmm4, xmm7
-   109 000000E3 761D                        jbe invalid_triangle
+   108 000000DF 660F2EE7                    ucomisd xmm4, xmm7
+   109 000000E3 741D                        je invalid_triangle
    110                                  
    111                                      ; ┌────────────────────────────────────────────────────────┐
    112                                      ; │ If all checks pass, return 1 (valid triangle)          │

@@ -36,8 +36,8 @@
 ; Language   : x86-64 Assembly                                         |  
 ; Assemble   : nasm -f elf64 -o huron.o huron.asm                      |  
 ; Editor     : VS Code                                                 |  
-; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |  
-;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
+; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         | 
+;              istriangle.o triangle.o -std=c2x -Wall -z noexecstack -lm 
 ;======================================================================|  
 
 

@@ -40,13 +40,13 @@
 ; Assemble   : nasm -f elf64 -l istriangle.lis -o istriangle.o         |   
 ;              istriangle.asm                                          |  
 ; Editor     : VS Code                                                 |  
-; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |   
-;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
+; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         | 
+;              istriangle.o triangle.o -std=c2x -Wall -z noexecstack -lm 
 ;======================================================================|  
 
 
-global manger
-extern printf
+global istriangle
+    extern printf
 
 segment .data
     invalid_triangle_msg db "These sides do not form a valid triangle.", 10, 0
@@ -75,38 +75,38 @@ istriangle:
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Check if any side <= 0                                 │
     ; └────────────────────────────────────────────────────────┘
-    comisd xmm4, xmm7
-    jbe invalid_triangle
+    ucomisd xmm4, xmm7
+    je invalid_triangle
 
-    comisd xmm5, xmm7
-    jbe invalid_triangle
+    ucomisd xmm5, xmm7
+    je invalid_triangle
 
-    comisd xmm6, xmm7
-    jbe invalid_triangle
+    ucomisd xmm6, xmm7
+    je invalid_triangle
 
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Check triangle inequality: side1 + side2 > side3       │
     ; └────────────────────────────────────────────────────────┘
     movsd xmm4, [rdi]
     addsd xmm4, xmm5
-    comisd xmm4, xmm6
-    jbe invalid_triangle
+    ucomisd xmm4, xmm6
+    je invalid_triangle
 
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Check: side1 + side3 > side2                           │
     ; └────────────────────────────────────────────────────────┘
     movsd xmm4, [rdi]
     addsd xmm4, xmm6
-    comisd xmm4, xmm5
-    jbe invalid_triangle
+    ucomisd xmm4, xmm5
+    je invalid_triangle
 
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Check: side2 + side3 > side1                           │
     ; └────────────────────────────────────────────────────────┘
     movsd xmm4, [rsi]
     addsd xmm4, xmm6
-    comisd xmm4, xmm7
-    jbe invalid_triangle
+    ucomisd xmm4, xmm7
+    je invalid_triangle
 
     ; ┌────────────────────────────────────────────────────────┐
     ; │ If all checks pass, return 1 (valid triangle)          │

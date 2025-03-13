@@ -39,8 +39,8 @@
 ; Language   : x86-64                                                  |  
 ; Assemble   : nasm -f elf64 -o manager.o manager.asm                  |  
 ; Editor     : VS Code                                                 |  
-; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |  
-;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
+; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         | 
+;              istriangle.o triangle.o -std=c2x -Wall -z noexecstack -lm 
 ;======================================================================|  
 global manager
 
@@ -78,7 +78,10 @@ segment .bss
     side_b resq 1
     side_c resq 1
     area resq 1
+    extra_buffer resq 10  ; Reserve space for 10 extra floats (can be adjusted as needed)
+    buffer_index resq 1   ; Store the current position in the buffer
 segment .text
+    global manager
     %include "triangle.inc"
 manager:
     ; ┌────────────────────────────────────────────────────────┐
@@ -199,7 +202,7 @@ more_than_three:
     mov     rax, 0
     mov     rdi, three_inputs
     call    printf
-    jmp     exit
+    jmp     end_loop
 
 ; ┌────────────────────────────────────────────────────────┐
 ; │ Input handling function                                │
@@ -208,12 +211,12 @@ input_array:
     back_register
     backup_compnents storedata
 
-    mov     r13, rdi 
-    mov     r14, rsi     
-    mov     r15, 0 
-    sub     rsp, 1024   
+    mov     r13, rdi     ; Pointer to the array where valid floats are stored
+    mov     r14, rsi     ; Number of floats expected
+    mov     r15, 0       ; Counter for valid floats
+    sub     rsp, 1024    ; Allocate buffer space on the stack
 
-begin:
+loop_inputs:
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Use fgets to get user input                            │
     ; └────────────────────────────────────────────────────────┘
@@ -227,7 +230,7 @@ begin:
     ; └────────────────────────────────────────────────────────┘
     cdqe
     cmp     rax, 0
-    je      exit
+    je      end_loop
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Get rid of newline character after every line          │
     ; └────────────────────────────────────────────────────────┘
@@ -235,9 +238,7 @@ begin:
     call    strlen
     mov     rbx, rax
     dec     rbx
-
-    mov     byte [rdi + rbx], 0x00
-
+    mov     byte [rdi + rbx], 0x00 
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Check if the input is a valid float                    │
     ; └────────────────────────────────────────────────────────┘
@@ -245,32 +246,43 @@ begin:
     mov     rdi, rsp
     call    isfloat
     cmp     rax, 0
-    je      tryagain
-
+    je      invalid_input
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Convert input into a float using atof                  │
     ; └────────────────────────────────────────────────────────┘
     mov     rax, 0
     mov     rdi, rsp
     call    atof
-     ; Copy the float into the array
-    movsd   [r13 + r15 * 8], xmm0
+    movsd   xmm15, xmm0   
 
-    ; Increase r15, repeat the loop if r15 is less than the max size
+    cmp     r15, r14
+    jl      store_in_array 
+
+    ; ┌────────────────────────────────────────────────────────┐
+    ; │ Store excess floats in FIFO buffer                     │
+    ; └────────────────────────────────────────────────────────┘
+    mov     rdi, extra_buffer
+    mov     rcx, [buffer_index] 
+    movsd   [rdi + rcx * 8], xmm15
+    inc     rcx
+    mov     [buffer_index], rcx
+    jmp     loop_inputs
+
+store_in_array:
+    movsd   [r13 + r15 * 8], xmm15
     inc     r15
     cmp     r15, r14
-    jl      begin
+    jl      loop_inputs
 
-    ; Jump to exit otherwise
-    jmp     exit  
+    jmp     end_loop
 
-tryagain:
+invalid_input:
     mov     rax, 0
     mov     rdi, prompt_tryagain
     call    printf
-    jmp     begin
+    jmp     loop_inputs
 
-exit:
+end_loop:
     add     rsp, 1024
     restore_components storedata
     mov     rax, r15
