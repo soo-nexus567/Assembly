@@ -1,0 +1,256 @@
+     1                                  ;======================================================================|  
+     2                                  ; Copyright info                                                       |  
+     3                                  ; "Assignment 3" is free software: you can redistribute it and modify  |  
+     4                                  ; it under the terms of the GNU General Public License as published by |  
+     5                                  ; the Free Software Foundation, either version 3 of the License, or    |  
+     6                                  ; (at your option) any later version.                                  |  
+     7                                  ;                                                                      |  
+     8                                  ; "Assignment 3" is distributed in the hope that it will be useful,    |  
+     9                                  ; but WITHOUT ANY WARRANTY; without even the implied warranty of       |  
+    10                                  ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU     |  
+    11                                  ; General Public License for more details.                             |  
+    12                                  ;                                                                      |  
+    13                                  ; You should have received a copy of the GNU General Public License    |  
+    14                                  ; along with this program. If not, see <https://www.gnu.org/licenses/>.|  
+    15                                  ;======================================================================|  
+    16                                  ; Author information                                                   |  
+    17                                  ; Author Name    : Jonathan Soo                                        |  
+    18                                  ; Author Email   : jonathansoo07@csu.fullerton.edu                     |  
+    19                                  ; Author Section : 240-11                                              |  
+    20                                  ; Author CWID    : 884776980                                           |  
+    21                                  ;======================================================================|  
+    22                                  ; Purpose                                                              |  
+    23                                  ; Calculate the third side of a triangle using floating-point          |  
+    24                                  ; arithmetic. Get input from user and output using C functions.        |  
+    25                                  ;======================================================================|  
+    26                                  ; Program information                                                  |  
+    27                                  ; Program Name      : Assignment 3                                     |  
+    28                                  ; Copyright (C)     : 2025, Jonathan Soo                               |  
+    29                                  ; Programming Lang. : One module in C and one in x86-64                |  
+    30                                  ; Date program began: 2025-Mar-05                                      |  
+    31                                  ; Date program completed: 2025-Mar-08                                  |  
+    32                                  ; Date comments upgraded: 2025-Mar-08                                  |  
+    33                                  ; Files in this program: huron.asm, istriangle.asm, manager.asm,       |  
+    34                                  ;                        main.c, r.sh                                  |  
+    35                                  ; Status: Complete. No errors found after testing.                     |  
+    36                                  ;======================================================================|  
+    37                                  ; This file                                                            |  
+    38                                  ; File Name  : istriangle.asm                                          |  
+    39                                  ; Language   : x86-64                                                  |  
+    40                                  ; Assemble   : nasm -f elf64 -l istriangle.lis -o istriangle.o         |   
+    41                                  ;              istriangle.asm                                          |  
+    42                                  ; Editor     : VS Code                                                 |  
+    43                                  ; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |   
+    44                                  ;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
+    45                                  ;======================================================================|  
+    46                                  
+    47                                  
+    48                                  global manger
+    49                                  extern printf
+    50                                  
+    51                                  segment .data
+    52 00000000 546865736520736964-         invalid_triangle_msg db "These sides do not form a valid triangle.", 10, 0
+    52 00000009 657320646F206E6F74-
+    52 00000012 20666F726D20612076-
+    52 0000001B 616C69642074726961-
+    52 00000024 6E676C652E0A00     
+    53 0000002B 546865207369646573-         valid_triangle_msg db "The sides form a valid triangle.", 10, 0
+    53 00000034 20666F726D20612076-
+    53 0000003D 616C69642074726961-
+    53 00000046 6E676C652E0A00     
+    54                                  
+    55                                  segment .bss
+    56                                  
+    57                                  segment .text
+    58                                      global istriangle
+    59                                      %include "triangle.inc"
+    60                              <1> 
+    61                              <1> 
+    62 00000000 0A546869732070726F- <1> array_line1 db 10, "This program is brought to you as a courtesy of", 10, "Author: Jonathan Soo", 10, "CWID: 884776980", 10, "Email: jonathansoo07@csu.fullerton.edu", 10, 10,  0
+    62 00000009 6772616D2069732062- <1>
+    62 00000012 726F7567687420746F- <1>
+    62 0000001B 20796F752061732061- <1>
+    62 00000024 20636F757274657379- <1>
+    62 0000002D 206F660A417574686F- <1>
+    62 00000036 723A204A6F6E617468- <1>
+    62 0000003F 616E20536F6F0A4357- <1>
+    62 00000048 49443A203838343737- <1>
+    62 00000051 363938300A456D6169- <1>
+    62 0000005A 6C3A206A6F6E617468- <1>
+    62 00000063 616E736F6F30374063- <1>
+    62 0000006C 73752E66756C6C6572- <1>
+    62 00000075 746F6E2E6564750A0A- <1>
+    62 0000007E 00                  <1>
+    63                              <1> %macro back_register 0    ;ar = activation record
+    64                              <1>     push    rbp
+    65                              <1>     mov     rbp, rsp
+    66                              <1> 
+    67                              <1>     ; Save the general purpose registers
+    68                              <1>     push    rbx
+    69                              <1>     push    rcx
+    70                              <1>     push    rdx
+    71                              <1>     push    rsi
+    72                              <1>     push    rdi
+    73                              <1>     push    r8 
+    74                              <1>     push    r9 
+    75                              <1>     push    r10
+    76                              <1>     push    r11
+    77                              <1>     push    r12
+    78                              <1>     push    r13
+    79                              <1>     push    r14
+    80                              <1>     push    r15
+    81                              <1>     pushf
+    82                              <1> %endmacro
+    83                              <1> %macro backup_compnents 1
+    84                              <1> ;This macro backs up all registers except GPRs to an array specified in parameter %1
+    85                              <1>    mov rax,7
+    86                              <1>    mov rdx,0
+    87                              <1>    xsave [%1]
+    88                              <1> %endmacro
+    89                              <1> %macro restore_components 1
+    90                              <1>    mov rax,7
+    91                              <1>    mov rdx,0
+    92                              <1>    xrstor [%1]
+    93                              <1> %endmacro
+    94                              <1> %macro print_info 0
+    95                              <1>     mov rax, 0
+    96                              <1>     mov rdi, array_line1
+    97                              <1>     call printf
+    98                              <1> %endmacro
+    99                              <1> %macro restore_registers 0
+   100                              <1>     popf          
+   101                              <1>     pop     r15
+   102                              <1>     pop     r14
+   103                              <1>     pop     r13
+   104                              <1>     pop     r12
+   105                              <1>     pop     r11
+   106                              <1>     pop     r10
+   107                              <1>     pop     r9 
+   108                              <1>     pop     r8 
+   109                              <1>     pop     rdi
+   110                              <1>     pop     rsi
+   111                              <1>     pop     rdx
+   112                              <1>     pop     rcx
+   113                              <1>     pop     rbx
+   114                              <1> 
+   115                              <1>     ; Restore the base pointer
+   116                              <1>     pop     rbp
+   117                              <1> %endmacro
+    60                                  
+    61                                  istriangle:
+    62                                      ; ┌────────────────────────────────────────────────────────┐
+    63                                      ; │ Save the base pointer                                  │
+    64                                      ; └────────────────────────────────────────────────────────┘
+    65                                      back_register
+    64 0000007F 55                  <1>  push rbp
+    65 00000080 4889E5              <1>  mov rbp, rsp
+    66                              <1> 
+    67                              <1> 
+    68 00000083 53                  <1>  push rbx
+    69 00000084 51                  <1>  push rcx
+    70 00000085 52                  <1>  push rdx
+    71 00000086 56                  <1>  push rsi
+    72 00000087 57                  <1>  push rdi
+    73 00000088 4150                <1>  push r8
+    74 0000008A 4151                <1>  push r9
+    75 0000008C 4152                <1>  push r10
+    76 0000008E 4153                <1>  push r11
+    77 00000090 4154                <1>  push r12
+    78 00000092 4155                <1>  push r13
+    79 00000094 4156                <1>  push r14
+    80 00000096 4157                <1>  push r15
+    81 00000098 9C                  <1>  pushf
+    66                                  
+    67                                      ; ┌────────────────────────────────────────────────────────┐
+    68                                      ; │ Load sides into non-volatile registers                 │
+    69                                      ; └────────────────────────────────────────────────────────┘
+    70 00000099 F20F1027                    movsd xmm4, [rdi]       
+    71 0000009D F20F102E                    movsd xmm5, [rsi]
+    72 000000A1 F20F1032                    movsd xmm6, [rdx]
+    73 000000A5 660F57FF                    xorpd xmm7, xmm7  ; xmm7 = 0.0
+    74                                  
+    75                                      ; ┌────────────────────────────────────────────────────────┐
+    76                                      ; │ Check if any side <= 0                                 │
+    77                                      ; └────────────────────────────────────────────────────────┘
+    78 000000A9 660F2FE7                    comisd xmm4, xmm7
+    79 000000AD 7653                        jbe invalid_triangle
+    80                                  
+    81 000000AF 660F2FEF                    comisd xmm5, xmm7
+    82 000000B3 764D                        jbe invalid_triangle
+    83                                  
+    84 000000B5 660F2FF7                    comisd xmm6, xmm7
+    85 000000B9 7647                        jbe invalid_triangle
+    86                                  
+    87                                      ; ┌────────────────────────────────────────────────────────┐
+    88                                      ; │ Check triangle inequality: side1 + side2 > side3       │
+    89                                      ; └────────────────────────────────────────────────────────┘
+    90 000000BB F20F1027                    movsd xmm4, [rdi]
+    91 000000BF F20F58E5                    addsd xmm4, xmm5
+    92 000000C3 660F2FE6                    comisd xmm4, xmm6
+    93 000000C7 7639                        jbe invalid_triangle
+    94                                  
+    95                                      ; ┌────────────────────────────────────────────────────────┐
+    96                                      ; │ Check: side1 + side3 > side2                           │
+    97                                      ; └────────────────────────────────────────────────────────┘
+    98 000000C9 F20F1027                    movsd xmm4, [rdi]
+    99 000000CD F20F58E6                    addsd xmm4, xmm6
+   100 000000D1 660F2FE5                    comisd xmm4, xmm5
+   101 000000D5 762B                        jbe invalid_triangle
+   102                                  
+   103                                      ; ┌────────────────────────────────────────────────────────┐
+   104                                      ; │ Check: side2 + side3 > side1                           │
+   105                                      ; └────────────────────────────────────────────────────────┘
+   106 000000D7 F20F1026                    movsd xmm4, [rsi]
+   107 000000DB F20F58E6                    addsd xmm4, xmm6
+   108 000000DF 660F2FE7                    comisd xmm4, xmm7
+   109 000000E3 761D                        jbe invalid_triangle
+   110                                  
+   111                                      ; ┌────────────────────────────────────────────────────────┐
+   112                                      ; │ If all checks pass, return 1 (valid triangle)          │
+   113                                      ; └────────────────────────────────────────────────────────┘
+   114 000000E5 B801000000                  mov rax, 1
+   115                                      restore_registers
+   100 000000EA 9D                  <1>  popf
+   101 000000EB 415F                <1>  pop r15
+   102 000000ED 415E                <1>  pop r14
+   103 000000EF 415D                <1>  pop r13
+   104 000000F1 415C                <1>  pop r12
+   105 000000F3 415B                <1>  pop r11
+   106 000000F5 415A                <1>  pop r10
+   107 000000F7 4159                <1>  pop r9
+   108 000000F9 4158                <1>  pop r8
+   109 000000FB 5F                  <1>  pop rdi
+   110 000000FC 5E                  <1>  pop rsi
+   111 000000FD 5A                  <1>  pop rdx
+   112 000000FE 59                  <1>  pop rcx
+   113 000000FF 5B                  <1>  pop rbx
+   114                              <1> 
+   115                              <1> 
+   116 00000100 5D                  <1>  pop rbp
+   116 00000101 C3                          ret
+   117                                  
+   118                                  invalid_triangle:
+   119                                      ; ┌────────────────────────────────────────────────────────┐
+   120                                      ; │ If the triangle is not valid, return -1                │
+   121                                      ; │ This value will be checked in manager                  │
+   122                                      ; └────────────────────────────────────────────────────────┘
+   123 00000102 48C7C0FFFFFFFF              mov rax, -1
+   124                                      restore_registers
+   100 00000109 9D                  <1>  popf
+   101 0000010A 415F                <1>  pop r15
+   102 0000010C 415E                <1>  pop r14
+   103 0000010E 415D                <1>  pop r13
+   104 00000110 415C                <1>  pop r12
+   105 00000112 415B                <1>  pop r11
+   106 00000114 415A                <1>  pop r10
+   107 00000116 4159                <1>  pop r9
+   108 00000118 4158                <1>  pop r8
+   109 0000011A 5F                  <1>  pop rdi
+   110 0000011B 5E                  <1>  pop rsi
+   111 0000011C 5A                  <1>  pop rdx
+   112 0000011D 59                  <1>  pop rcx
+   113 0000011E 5B                  <1>  pop rbx
+   114                              <1> 
+   115                              <1> 
+   116 0000011F 5D                  <1>  pop rbp
+   125 00000120 C3                          ret

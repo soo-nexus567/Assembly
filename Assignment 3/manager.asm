@@ -42,6 +42,8 @@
 ; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         | 
 ;              istriangle.o triangle.o -std=c2x -Wall -z noexecstack -lm 
 ;======================================================================|  
+global _start
+_start:
 global manager
 
     extern scanf
@@ -58,7 +60,7 @@ true equ -1
 false equ 0
 
 segment .data
-    prompt_input db "Please enter the lengths of three sides of a triangle:", 10, 0
+    greetings db "Happy Anniversary", 10, 0
     valid_input db "These inputs have been tested and they are sides of a valid triangle.", 10, 10,  0
     huron_applied db "The Huron formula will be applied to find the area.", 10, 10, 0
     huron_area db "The area is %.2f sq units. This number will be returned to the caller module.", 10, 10, 0
@@ -98,8 +100,9 @@ manager:
     ; ┌────────────────────────────────────────────────────────┐
     ; │ Prompt the input instruction                           │
     ; └────────────────────────────────────────────────────────┘
+    
     mov     rax, 0
-    mov     rdi, prompt_input
+    mov     rdi, greetings
     call    printf
 
     ; ┌────────────────────────────────────────────────────────┐
@@ -193,6 +196,9 @@ manager:
     ; │ Restore GPRs and return                                │
     ; └────────────────────────────────────────────────────────┘
     restore_registers
+    mov rax, 60         ; syscall number for exit (60)
+    xor rdi, rdi        ; exit status 0
+    syscall
     ret
 
 ; ┌────────────────────────────────────────────────────────┐

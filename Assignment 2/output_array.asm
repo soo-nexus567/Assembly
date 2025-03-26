@@ -28,17 +28,20 @@ output_array:
     mov r15, rdi
     mov r14, rsi
     mov r13, 0
+    xor rcx, rcx
 
 begin:
     cmp     r13, r14             ; Check if counter >= array size
     jge     exit                 ; If yes, exit loop
 
-    movq    xmm0, [r15 + r13 * 8] ; Load double-precision float
+    movq    xmm0, [r15 + rcx * 8] ; Load double-precision float
     mov     rdi, msg_number      ; Load format string
     mov     rax, 1               ; Indicate one float argument for printf
     call    printf               ; Print float
-    inc     r13                  ; Increment loop counter
-    jmp     begin                ; Loop
+    
+    inc     r13
+    cmp     rcx, r14
+    jmp     begin
 exit:
     mov rdi, newline
     call printf

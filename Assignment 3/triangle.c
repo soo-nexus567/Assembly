@@ -44,22 +44,24 @@
 //              istriangle.o triangle.o -std=c2x -Wall -z noexecstack -lm     
 //======================================================================|  
 #include <stdio.h>
-extern double manager();
+// extern double manager();
 int main() {
-    char name[100];
-    printf("Welcome to Huron's Triangle. We take care of all your triangle needs.\n");
-    printf("Please enter your name: ");
-    scanf("%99[^\n]%*c", name);
-    double area = manager();
-    if (area == -1){
-        printf("Thank you %s. Your patronage is appreciated.\n\n", name);
-        printf("The main function has received this number %.1f, and will keep it for a while.\n\n", area);
-        printf("A -1 will return to the aperating system\n\n");
-        return -1;
-    } else{
-        printf("The main function has received this number %.2f, and will keep it for a while.\n\n", area);
-    }
-    printf("Thank you %s. Your patronage is appreciated.\n\n", name);
-    printf("A zero will not return to the aperating system\n");
+    char greeting [] = "Happy Anniversary";
+    // printf("%s", greeting);
+
+    // printf("Welcome to Huron's Triangle. We take care of all your triangle needs.\n");
+    // printf("Please enter your name: ");
+    // scanf("%99[^\n]%*c", name);
+    // double area = manager();
+    // if (area == -1){
+    //     printf("Thank you %s. Your patronage is appreciated.\n\n", name);
+    //     printf("The main function has received this number %.1f, and will keep it for a while.\n\n", area);
+    //     printf("A -1 will return to the aperating system\n\n");
+    //     return -1;
+    // } else{
+    //     printf("The main function has received this number %.2f, and will keep it for a while.\n\n", area);
+    // }
+    // printf("Thank you %s. Your patronage is appreciated.\n\n", name);
+    // printf("A zero will not return to the aperating system\n");
     return 1; 
 }

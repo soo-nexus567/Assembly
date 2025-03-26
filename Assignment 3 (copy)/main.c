@@ -42,6 +42,7 @@
 // Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |  
 //              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
 //======================================================================|  
+
 #include <stdio.h>
 extern double manger();
 int main() {
@@ -50,12 +51,13 @@ int main() {
     printf("Please enter your name: ");
     scanf("%99[^\n]%*c", name);
     double area = manger();
-    printf("The main function has received this number %.2f, and will keep it for a while.\n\n", area);
-    printf("Thank you %s. Your patronage is appreciated.\n\n", name);
+
     if (area == -1){
-        printf("A -1 will not return to the aperating system\n\n");
+        printf("The main function has received this number -1, and will keep it for a while.\n\n");
+        printf("A -1 will be returned to the operating system\n");
         return -1;
     }
-    printf("A zero will not return to the aperating system\n");
-    return 0; 
+    printf("The main function has received this number %.4f, and will keep it for a while.\n\n", area);
+    printf("Thank you %s. Your patronage is appreciated.\n\n", name);
+    printf("A zero will not return to the operating system\n");
 }

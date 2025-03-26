@@ -1,0 +1,808 @@
+     1                                  ;======================================================================|  
+     2                                  ; Copyright Info                                                       |  
+     3                                  ; "Assignment 3" is free software: you can redistribute it and modify  |  
+     4                                  ; it under the terms of the GNU General Public License as published by |  
+     5                                  ; the Free Software Foundation, either version 3 of the License, or    |  
+     6                                  ; (at your option) any later version.                                  |  
+     7                                  ;                                                                      |  
+     8                                  ; "Assignment 3" is distributed in the hope that it will be useful,    |  
+     9                                  ; but WITHOUT ANY WARRANTY; without even the implied warranty of       |  
+    10                                  ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU     |  
+    11                                  ; General Public License for more details.                             |  
+    12                                  ;                                                                      |  
+    13                                  ; You should have received a copy of the GNU General Public License    |  
+    14                                  ; along with this program. If not, see <https://www.gnu.org/licenses/>.|  
+    15                                  ;======================================================================|  
+    16                                  ; Author information                                                   |  
+    17                                  ; Author Name    : Jonathan Soo                                        |  
+    18                                  ; Author Email   : jonathansoo07@csu.fullerton.edu                     |  
+    19                                  ; Author Section : 240-11                                              |  
+    20                                  ; Author CWID    : 884776980                                           |  
+    21                                  ;======================================================================|  
+    22                                  ; Purpose                                                              |  
+    23                                  ; Calculate the third side of a triangle using floating-point          |  
+    24                                  ; arithmetic. Get input from user and output using C functions.        |  
+    25                                  ;======================================================================|  
+    26                                  ; Program information                                                  |  
+    27                                  ; Program Name      : Assignment 3                                     |  
+    28                                  ; Copyright (C)     : 2025, Jonathan Soo                               |  
+    29                                  ; Programming Lang. : One module in C and one in x86-64                |  
+    30                                  ; Date program began: 2025-Mar-05                                      |  
+    31                                  ; Date program completed: 2025-Mar-08                                  |  
+    32                                  ; Date comments upgraded: 2025-Mar-08                                  |  
+    33                                  ; Files in this program: huron.asm, istriangle.asm, manager.asm,       |  
+    34                                  ;                        main.c, r.sh                                  |  
+    35                                  ; Status: Complete. No errors found after testing.                     |  
+    36                                  ;======================================================================|  
+    37                                  ; This file                                                            |  
+    38                                  ; File Name  : manager.asm                                             |  
+    39                                  ; Language   : x86-64                                                  |  
+    40                                  ; Assemble   : nasm -f elf64 -o manager.o manager.asm                  |  
+    41                                  ; Editor     : VS Code                                                 |  
+    42                                  ; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |  
+    43                                  ;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
+    44                                  ;======================================================================|  
+    45                                  
+    46                                  
+    47                                  global manger
+    48                                  
+    49                                      extern scanf
+    50                                      extern printf
+    51                                      extern atof
+    52                                      extern huron
+    53                                      extern istriangle
+    54                                      extern stdin
+    55                                      extern strlen
+    56                                      extern fgets
+    57                                      extern strlen
+    58                                  null equ 0
+    59                                  true equ -1
+    60                                  false equ 0
+    61                                  array_size equ 12
+    62                                  segment .data
+    63 00000000 0A506C656173652065-         prompt_input db 10, "Please enter the lengths of three sides of a triangle:", 10, 0
+    63 00000009 6E7465722074686520-
+    63 00000012 6C656E67746873206F-
+    63 0000001B 662074687265652073-
+    63 00000024 69646573206F662061-
+    63 0000002D 20747269616E676C65-
+    63 00000036 3A0A00             
+    64 00000039 546865736520696E70-         valid_input db "These inputs have been tested and they are sides of a valid triangle.", 10, 10, 0
+    64 00000042 757473206861766520-
+    64 0000004B 6265656E2074657374-
+    64 00000054 656420616E64207468-
+    64 0000005D 657920617265207369-
+    64 00000066 646573206F66206120-
+    64 0000006F 76616C696420747269-
+    64 00000078 616E676C652E0A0A00 
+    65 00000081 546865204875726F6E-         huron_applied db "The Huron formula will be applied to find the area.", 10, 10, 0
+    65 0000008A 20666F726D756C6120-
+    65 00000093 77696C6C2062652061-
+    65 0000009C 70706C69656420746F-
+    65 000000A5 2066696E6420746865-
+    65 000000AE 20617265612E0A0A00 
+    66 000000B7 546865206172656120-         huron_area db "The area is %f sq units. This number will be returned to the caller module.", 10, 10, 0
+    66 000000C0 697320256620737120-
+    66 000000C9 756E6974732E205468-
+    66 000000D2 6973206E756D626572-
+    66 000000DB 2077696C6C20626520-
+    66 000000E4 72657475726E656420-
+    66 000000ED 746F20746865206361-
+    66 000000F6 6C6C6572206D6F6475-
+    66 000000FF 6C652E0A0A00       
+    67 00000105 257300                      prompt_user db "%s", 0
+    68 00000108 257300                      format_str db "%s", 0
+    69 0000010B 25660A00                    format_float db "%f", 10, 0
+    70 0000010F 3078256C780A00              format_hex: db "0x%lx", 10, 0
+    71 00000116 4572726F7220696E70-         prompt_tryagain db "Error input try again", 10, 0
+    71 0000011F 757420747279206167-
+    71 00000128 61696E0A00         
+    72 0000012D 546865736520696E70-         three_inputs db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 10, 0
+    72 00000136 757473206861766520-
+    72 0000013F 6265656E2074657374-
+    72 00000148 656420616E64207468-
+    72 00000151 657920617265206E6F-
+    72 0000015A 742074686520736964-
+    72 00000163 6573206F6620612076-
+    72 0000016C 616C69642074726961-
+    72 00000175 6E676C652E0A0A00   
+    73 0000017D 546865736520696E70-         invalid db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 10,  0
+    73 00000186 757473206861766520-
+    73 0000018F 6265656E2074657374-
+    73 00000198 656420616E64207468-
+    73 000001A1 657920617265206E6F-
+    73 000001AA 742074686520736964-
+    73 000001B3 6573206F6620612076-
+    73 000001BC 616C69642074726961-
+    73 000001C5 6E676C652E0A0A00   
+    74 000001CD 5468616E6B20796F75-         thank_you db "Thank you", 10,10, 0
+    74 000001D6 0A0A00             
+    75 000001D9 332E313400                  test_str: db "3.14", 0
+    76 000001DE 0000000000000000            results dq 0.0
+    77 000001E6 000000000000F0BF            negative_one dq -1.0
+    78                                  segment .bss
+    79                                      align 64
+    80 00000000 <res 340h>                  storedata resb 832
+    81 00000340 <res 60h>                   nice_array resq array_size
+    82 000003A0 ????????????????            side_a resq 1
+    83 000003A8 ????????????????            side_b resq 1
+    84 000003B0 ????????????????            side_c resq 1
+    85 000003B8 ????????????????            area resq 1
+    86                                  segment .text
+    87                                      %include "triangle.inc"
+    88                              <1> 
+    89                              <1> 
+    90 00000000 0A546869732070726F- <1> array_line1 db 10, "This program is brought to you as a courtesy of", 10, "Author: Jonathan Soo", 10, "CWID: 884776980", 10, "Email: jonathansoo07@csu.fullerton.edu", 10, 10,  0
+    90 00000009 6772616D2069732062- <1>
+    90 00000012 726F7567687420746F- <1>
+    90 0000001B 20796F752061732061- <1>
+    90 00000024 20636F757274657379- <1>
+    90 0000002D 206F660A417574686F- <1>
+    90 00000036 723A204A6F6E617468- <1>
+    90 0000003F 616E20536F6F0A4357- <1>
+    90 00000048 49443A203838343737- <1>
+    90 00000051 363938300A456D6169- <1>
+    90 0000005A 6C3A206A6F6E617468- <1>
+    90 00000063 616E736F6F30374063- <1>
+    90 0000006C 73752E66756C6C6572- <1>
+    90 00000075 746F6E2E6564750A0A- <1>
+    90 0000007E 00                  <1>
+    91                              <1> %macro back_register 0    ;ar = activation record
+    92                              <1>     push    rbp
+    93                              <1>     mov     rbp, rsp
+    94                              <1> 
+    95                              <1>     ; Save the general purpose registers
+    96                              <1>     push    rbx
+    97                              <1>     push    rcx
+    98                              <1>     push    rdx
+    99                              <1>     push    rsi
+   100                              <1>     push    rdi
+   101                              <1>     push    r8 
+   102                              <1>     push    r9 
+   103                              <1>     push    r10
+   104                              <1>     push    r11
+   105                              <1>     push    r12
+   106                              <1>     push    r13
+   107                              <1>     push    r14
+   108                              <1>     push    r15
+   109                              <1>     pushf
+   110                              <1> %endmacro
+   111                              <1> %macro backup_compnents 1
+   112                              <1> ;This macro backs up all registers except GPRs to an array specified in parameter %1
+   113                              <1>    mov rax,7
+   114                              <1>    mov rdx,0
+   115                              <1>    xsave [%1]
+   116                              <1> %endmacro
+   117                              <1> %macro restore_components 1
+   118                              <1>    mov rax,7
+   119                              <1>    mov rdx,0
+   120                              <1>    xrstor [%1]
+   121                              <1> %endmacro
+   122                              <1> %macro print_info 0
+   123                              <1>     mov rax, 0
+   124                              <1>     mov rdi, array_line1
+   125                              <1>     call printf
+   126                              <1> %endmacro
+   127                              <1> %macro restore_registers 0
+   128                              <1>     popf          
+   129                              <1>     pop     r15
+   130                              <1>     pop     r14
+   131                              <1>     pop     r13
+   132                              <1>     pop     r12
+   133                              <1>     pop     r11
+   134                              <1>     pop     r10
+   135                              <1>     pop     r9 
+   136                              <1>     pop     r8 
+   137                              <1>     pop     rdi
+   138                              <1>     pop     rsi
+   139                              <1>     pop     rdx
+   140                              <1>     pop     rcx
+   141                              <1>     pop     rbx
+   142                              <1> 
+   143                              <1>     ; Restore the base pointer
+   144                              <1>     pop     rbp
+   145                              <1> %endmacro
+    88                                  manger:
+    89                                      ; ┌────────────────────────────────────────────────────────┐
+    90                                      ; │ Back up General Purpose Registers (GPRs)               │
+    91                                      ; └────────────────────────────────────────────────────────┘
+    92                                      back_register
+    92 0000007F 55                  <1>  push rbp
+    93 00000080 4889E5              <1>  mov rbp, rsp
+    94                              <1> 
+    95                              <1> 
+    96 00000083 53                  <1>  push rbx
+    97 00000084 51                  <1>  push rcx
+    98 00000085 52                  <1>  push rdx
+    99 00000086 56                  <1>  push rsi
+   100 00000087 57                  <1>  push rdi
+   101 00000088 4150                <1>  push r8
+   102 0000008A 4151                <1>  push r9
+   103 0000008C 4152                <1>  push r10
+   104 0000008E 4153                <1>  push r11
+   105 00000090 4154                <1>  push r12
+   106 00000092 4155                <1>  push r13
+   107 00000094 4156                <1>  push r14
+   108 00000096 4157                <1>  push r15
+   109 00000098 9C                  <1>  pushf
+    93                                  
+    94                                      ; ┌────────────────────────────────────────────────────────┐
+    95                                      ; │ Save all the floating-point numbers                    │
+    96                                      ; └────────────────────────────────────────────────────────┘
+    97                                      backup_compnents storedata
+   112                              <1> 
+   113 00000099 B807000000          <1>  mov rax,7
+   114 0000009E BA00000000          <1>  mov rdx,0
+   115 000000A3 0FAE2425[00000000]  <1>  xsave [%1]
+    98                                      print_info
+   123 000000AB B800000000          <1>  mov rax, 0
+   124 000000B0 48BF-               <1>  mov rdi, array_line1
+   124 000000B2 [0000000000000000]  <1>
+   125 000000BA E8(00000000)        <1>  call printf
+    99                                  
+   100                                      ; ┌────────────────────────────────────────────────────────┐
+   101                                      ; │ Prompt the input instruction                           │
+   102                                      ; └────────────────────────────────────────────────────────┘
+   103 000000BF B800000000                  mov     rax, 0
+   104 000000C4 48BF-                       mov     rdi, prompt_input
+   104 000000C6 [0000000000000000] 
+   105 000000CE E8(00000000)                call    printf
+   106                                  
+   107                                      ; ┌────────────────────────────────────────────────────────┐
+   108                                      ; │ Give the inputs to input_array where they are stored   │
+   109                                      ; │ in an array (nice_array)                               │
+   110                                      ; └────────────────────────────────────────────────────────┘
+   111 000000D3 48BF-                       mov     rdi, nice_array
+   111 000000D5 [4003000000000000] 
+   112 000000DD BE0C000000                  mov     rsi, array_size
+   113 000000E2 E849010000                  call    input_array
+   114 000000E7 4989C7                      mov     r15, rax
+   115                                  
+   116                                      ; ┌────────────────────────────────────────────────────────┐
+   117                                      ; │ Check if there are 3 inputs                            │
+   118                                      ; │ If not, exit and prompt user to re-run the program     │
+   119                                      ; └────────────────────────────────────────────────────────┘
+   120 000000EA 4983FF03                    cmp     r15, 3
+   121 000000EE 0F8F10020000                jg      no_triangle
+   122                                      
+   123                                      ; ┌────────────────────────────────────────────────────────┐
+   124                                      ; │ Store the elements of the array in separate variables  │
+   125                                      ; │ side_a, side_b, side_c                                 │
+   126                                      ; └────────────────────────────────────────────────────────┘
+   127 000000F4 F2440F103C25-               movsd   xmm15, [nice_array]  
+   127 000000FA [40030000]         
+   128 000000FE F2440F113C25-               movsd   [side_a], xmm15   
+   128 00000104 [A0030000]         
+   129                                  
+   130 00000108 F2440F103425-               movsd   xmm14, [nice_array+8]  
+   130 0000010E [48030000]         
+   131 00000112 F2440F113425-               movsd   [side_b], xmm14   
+   131 00000118 [A8030000]         
+   132                                  
+   133 0000011C F2440F102C25-               movsd   xmm13, [nice_array+16]  
+   133 00000122 [50030000]         
+   134 00000126 F2440F112C25-               movsd   [side_c], xmm13   
+   134 0000012C [B0030000]         
+   135                                  
+   136                                      ; ┌────────────────────────────────────────────────────────┐
+   137                                      ; │ Print thank you message to satisfy the input example   │
+   138                                      ; └────────────────────────────────────────────────────────┘
+   139 00000130 B800000000                  mov     rax, 0
+   140 00000135 48BF-                       mov     rdi, thank_you
+   140 00000137 [CD01000000000000] 
+   141 0000013F E8(00000000)                call    printf
+   142                                      
+   143                                      ; ┌────────────────────────────────────────────────────────┐
+   144                                      ; │ Validate the sides given from the user                 │
+   145                                      ; └────────────────────────────────────────────────────────┘
+   146 00000144 48BF-                       mov     rdi, side_a
+   146 00000146 [A003000000000000] 
+   147 0000014E 48BE-                       mov     rsi, side_b
+   147 00000150 [A803000000000000] 
+   148 00000158 48BA-                       mov     rdx, side_c
+   148 0000015A [B003000000000000] 
+   149 00000162 E8(00000000)                call    istriangle
+   150                                  
+   151                                      ; ┌────────────────────────────────────────────────────────┐
+   152                                      ; │ If istriangle returns -1, exit the program and prompt  │
+   153                                      ; │ the user                                               │
+   154                                      ; └────────────────────────────────────────────────────────┘
+   155 00000167 4883F8FF                    cmp     rax, -1
+   156 0000016B 0F8493010000                je      no_triangle
+   157                                      
+   158                                      ; ┌────────────────────────────────────────────────────────┐
+   159                                      ; │ Prompt the user that they have entered a valid triangle│
+   160                                      ; └────────────────────────────────────────────────────────┘
+   161 00000171 B800000000                  mov     rax, 0
+   162 00000176 48BF-                       mov     rdi, valid_input
+   162 00000178 [3900000000000000] 
+   163 00000180 E8(00000000)                call    printf
+   164                                  
+   165                                      ; ┌────────────────────────────────────────────────────────┐
+   166                                      ; │ Notify user that Heron's formula will be applied       │
+   167                                      ; └────────────────────────────────────────────────────────┘
+   168 00000185 B800000000                  mov     rax, 0
+   169 0000018A 48BF-                       mov     rdi, huron_applied
+   169 0000018C [8100000000000000] 
+   170 00000194 E8(00000000)                call    printf
+   171                                  
+   172                                      ; ┌────────────────────────────────────────────────────────┐
+   173                                      ; │ Give validated inputs to huron to calculate area       │
+   174                                      ; │ with side_a, side_b, side_c                            │
+   175                                      ; └────────────────────────────────────────────────────────┘
+   176 00000199 48BF-                       mov     rdi, side_a
+   176 0000019B [A003000000000000] 
+   177 000001A3 48BE-                       mov     rsi, side_b
+   177 000001A5 [A803000000000000] 
+   178 000001AD 48BA-                       mov     rdx, side_c
+   178 000001AF [B003000000000000] 
+   179 000001B7 E8(00000000)                call    huron
+   180 000001BC F20F110425-                 movsd   [area], xmm0
+   180 000001C1 [B8030000]         
+   181                                  
+   182                                      ; ┌────────────────────────────────────────────────────────┐
+   183                                      ; │ Print the calculated area                              │
+   184                                      ; └────────────────────────────────────────────────────────┘
+   185 000001C5 48BF-                       mov     rdi, huron_area  
+   185 000001C7 [B700000000000000] 
+   186 000001CF 488B3425[B8030000]          mov     rsi, [area] 
+   187 000001D7 B801000000                  mov     rax, 1                   
+   188 000001DC E8(00000000)                call    printf 
+   189                                  
+   190                                      ; ┌────────────────────────────────────────────────────────┐
+   191                                      ; │ Restore floating-point numbers using the macro         │
+   192                                      ; └────────────────────────────────────────────────────────┘
+   193                                      restore_components storedata
+   118 000001E1 B807000000          <1>  mov rax,7
+   119 000001E6 BA00000000          <1>  mov rdx,0
+   120 000001EB 0FAE2C25[00000000]  <1>  xrstor [%1]
+   194 000001F3 4C89F8                      mov     rax, r15
+   195 000001F6 F20F100425-                 movsd   xmm0, [area]
+   195 000001FB [B8030000]         
+   196                                  
+   197                                      ; ┌────────────────────────────────────────────────────────┐
+   198                                      ; │ Restore GPRs using the macro and return                │
+   199                                      ; └────────────────────────────────────────────────────────┘
+   200                                      restore_registers
+   128 000001FF 9D                  <1>  popf
+   129 00000200 415F                <1>  pop r15
+   130 00000202 415E                <1>  pop r14
+   131 00000204 415D                <1>  pop r13
+   132 00000206 415C                <1>  pop r12
+   133 00000208 415B                <1>  pop r11
+   134 0000020A 415A                <1>  pop r10
+   135 0000020C 4159                <1>  pop r9
+   136 0000020E 4158                <1>  pop r8
+   137 00000210 5F                  <1>  pop rdi
+   138 00000211 5E                  <1>  pop rsi
+   139 00000212 5A                  <1>  pop rdx
+   140 00000213 59                  <1>  pop rcx
+   141 00000214 5B                  <1>  pop rbx
+   142                              <1> 
+   143                              <1> 
+   144 00000215 5D                  <1>  pop rbp
+   201 00000216 C3                          ret
+   202                                  
+   203                                  ; ┌────────────────────────────────────────────────────────┐
+   204                                  ; │ Handling more than 3 inputs, resulting in an error     │
+   205                                  ; └────────────────────────────────────────────────────────┘
+   206                                  more_than_three:
+   207 00000217 B800000000                  mov     rax, 0
+   208 0000021C 48BF-                       mov     rdi, three_inputs
+   208 0000021E [2D01000000000000] 
+   209 00000226 E8(00000000)                call    printf
+   210 0000022B E9A3000000                  jmp     exit
+   211                                  
+   212                                  ; ┌────────────────────────────────────────────────────────┐
+   213                                  ; │ Input handling function                                │
+   214                                  ; └────────────────────────────────────────────────────────┘
+   215                                  input_array:
+   216 00000230 55                          push    rbp
+   217 00000231 4889E5                      mov     rbp, rsp
+   218 00000234 53                          push    rbx
+   219 00000235 51                          push    rcx
+   220 00000236 52                          push    rdx
+   221 00000237 56                          push    rsi
+   222 00000238 57                          push    rdi
+   223 00000239 4150                        push    r8 
+   224 0000023B 4151                        push    r9 
+   225 0000023D 4152                        push    r10
+   226 0000023F 4153                        push    r11
+   227 00000241 4154                        push    r12
+   228 00000243 4155                        push    r13
+   229 00000245 4156                        push    r14
+   230 00000247 4157                        push    r15
+   231 00000249 9C                          pushf
+   232                                  
+   233 0000024A B807000000                  mov     rax, 7
+   234 0000024F BA00000000                  mov     rdx, 0
+   235 00000254 0FAE2425[00000000]          xsave   [storedata]
+   236                                  
+   237 0000025C 4989FD                      mov     r13, rdi    ; r13 contains the array
+   238 0000025F 4989F6                      mov     r14, rsi    ; r14 contains the max size
+   239 00000262 41BF00000000                mov     r15, 0      ; r15 is the index of the loop
+   240 00000268 4883EC10                    sub     rsp, 16     ; Allocate only 16 bytes for input
+   241                                  
+   242                                  begin:
+   243 0000026C B800000000                  mov     rax, 0
+   244 00000271 48BF-                       mov     rdi, prompt_user
+   244 00000273 [0501000000000000] 
+   245 0000027B 4889E6                      mov     rsi, rsp
+   246 0000027E E8(00000000)                call    scanf
+   247                                  
+   248 00000283 4898                        cdqe
+   249 00000285 4883F8FF                    cmp     rax, -1
+   250 00000289 7448                        je      exit
+   251                                  
+   252 0000028B B800000000                  mov     rax, 0
+   253 00000290 4889E7                      mov     rdi, rsp
+   254 00000293 E8A1000000                  call    isfloat
+   255 00000298 4883F800                    cmp     rax, 0
+   256 0000029C 741F                        je      tryagain
+   257                                  
+   258 0000029E B800000000                  mov     rax, 0
+   259 000002A3 4889E7                      mov     rdi, rsp
+   260 000002A6 4883EC08                    sub     rsp, 8  ; Ensure 16-byte alignment
+   261 000002AA E8(00000000)                call    atof
+   262 000002AF 4883C408                    add     rsp, 8  ; Restore stack
+   263                                  
+   264 000002B3 49FFC7                      inc     r15
+   265 000002B6 4D39F7                      cmp     r15, r14
+   266 000002B9 7CB1                        jl      begin
+   267 000002BB EB16                        jmp     exit      
+   268                                  
+   269                                  tryagain:
+   270 000002BD B800000000                  mov     rax, 0
+   271 000002C2 48BF-                       mov     rdi, prompt_tryagain
+   271 000002C4 [1601000000000000] 
+   272 000002CC E8(00000000)                call    printf
+   273 000002D1 EB99                        jmp     begin
+   274                                  
+   275                                  exit:
+   276 000002D3 4883C410                    add     rsp, 16   ; Restore stack
+   277                                  
+   278 000002D7 B807000000                  mov     rax, 7
+   279 000002DC BA00000000                  mov     rdx, 0
+   280 000002E1 0FAE2C25[00000000]          xrstor  [storedata]
+   281                                  
+   282 000002E9 4C89F8                      mov     rax, r15
+   283                                  
+   284 000002EC 9D                          popf          
+   285 000002ED 415F                        pop     r15
+   286 000002EF 415E                        pop     r14
+   287 000002F1 415D                        pop     r13
+   288 000002F3 415C                        pop     r12
+   289 000002F5 415B                        pop     r11
+   290 000002F7 415A                        pop     r10
+   291 000002F9 4159                        pop     r9 
+   292 000002FB 4158                        pop     r8 
+   293 000002FD 5F                          pop     rdi
+   294 000002FE 5E                          pop     rsi
+   295 000002FF 5A                          pop     rdx
+   296 00000300 59                          pop     rcx
+   297 00000301 5B                          pop     rbx
+   298 00000302 5D                          pop     rbp
+   299                                  
+   300 00000303 C3                          ret
+   301                                  ; ┌────────────────────────────────────────────────────────┐
+   302                                  ; │ No valid triangle handler and return negative one      │
+   303                                  ; └────────────────────────────────────────────────────────┘
+   304                                  no_triangle:
+   305 00000304 B800000000                  mov     rax, 0
+   306 00000309 48BF-                       mov     rdi, invalid
+   306 0000030B [7D01000000000000] 
+   307 00000313 E8(00000000)                call    printf
+   308 00000318 F20F100425-                 movsd   xmm0, [negative_one]
+   308 0000031D [E6010000]         
+   309                                      restore_registers
+   128 00000321 9D                  <1>  popf
+   129 00000322 415F                <1>  pop r15
+   130 00000324 415E                <1>  pop r14
+   131 00000326 415D                <1>  pop r13
+   132 00000328 415C                <1>  pop r12
+   133 0000032A 415B                <1>  pop r11
+   134 0000032C 415A                <1>  pop r10
+   135 0000032E 4159                <1>  pop r9
+   136 00000330 4158                <1>  pop r8
+   137 00000332 5F                  <1>  pop rdi
+   138 00000333 5E                  <1>  pop rsi
+   139 00000334 5A                  <1>  pop rdx
+   140 00000335 59                  <1>  pop rcx
+   141 00000336 5B                  <1>  pop rbx
+   142                              <1> 
+   143                              <1> 
+   144 00000337 5D                  <1>  pop rbp
+   310 00000338 C3                          ret
+   311                                  ;****************************************************************************************************************************
+   312                                  ;Program name: "isfloat".  This a library function contained in a single file.  The function receives a null-terminated     *
+   313                                  ;array of char and either verifies that the array can be converted to a 64-bit float or denies that such a conversion is    *
+   314                                  ;possible.  Copyright (C) 2022 Floyd Holliday.                                                                              *
+   315                                  ;                                                                                                                           *
+   316                                  ;This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public   *
+   317                                  ;License version 3 as published by the Free Software Foundation.  This program is distributed in the hope that it will be   *
+   318                                  ;useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.*
+   319                                  ;See the GNU Lesser General Public License for more details. A copy of the GNU General Public License v3 is available here: *
+   320                                  ;<https:;www.gnu.org/licenses/>.                            *
+   321                                  ;****************************************************************************************************************************
+   322                                  ;
+   323                                  ;
+   324                                  ;========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1=========2=========3**
+   325                                  ;Author information
+   326                                  ;  Author name: Floyd Holliday
+   327                                  ;  Author email: holliday@fullerton.edu
+   328                                  ;  Author phone (wired phone in CS building): (657)278-7021
+   329                                  ;
+   330                                  ;Status
+   331                                  ;  This software is not an application program, but rather it is a single function licensed for use by other applications.
+   332                                  ;  This function can be embedded within both FOSS programs and in proprietary programs as permitted by the LGPL.
+   333                                  
+   334                                  ;Function information
+   335                                  ;  Function name: isfloat
+   336                                  ;  Programming language: X86 assembly in Intel syntax.
+   337                                  ;  Date development began:  2022-Feb-28
+   338                                  ;  Date version 1.0 finished: 2022-Mar-03
+   339                                  ;  Files of this function: isfloat.asm
+   340                                  ;  System requirements: an X86 platform with nasm installed o other compatible assembler.
+   341                                  ;  Know issues: <now in testing phase>
+   342                                  ;  Assembler used for testing: Nasm version 2.14.02
+   343                                  ;  Prototype: bool isfloat(char *);
+   344                                  ;
+   345                                  ;Purpose
+   346                                  ;  This function wil accept a string (array of char) and verify that it can be converted to a corresponding 64-bit 
+   347                                  ;  float number or not converted to a float number.
+   348                                  ;
+   349                                  ;Translation information
+   350                                  ;  Assemble: nasm -f elf64 -l isfloat.lis -o isfloat.o isfloat.asm
+   351                                  ;
+   352                                  ;Software design document:
+   353                                  ;  An Execution flow chart accompanies this function.  That document will provide a better understanding of the 
+   354                                  ;  algorithm used in the isfloat function than a direct reading of the source code of the function.
+   355                                  
+   356                                  ;========= Begin source code ====================================================================================
+   357                                  ;Declaration area
+   358                                  
+   359                                  global isfloat
+   360                                  
+   361                                  null equ 0
+   362                                  true equ -1
+   363                                  false equ 0
+   364                                  
+   365                                  segment .data
+   366                                     ;This segment is empty
+   367                                  
+   368                                  segment .bss
+   369                                     ;This segment is empty
+   370                                  
+   371                                  segment .text
+   372                                  isfloat:
+   373                                  
+   374                                  ;Block that backs up almost all GPRs
+   375                                  ;Back up the general purpose registers for the sole purpose of protecting the data of the caller.
+   376 00000339 55                      push rbp                                          ;Backup rbp
+   377 0000033A 4889E5                  mov  rbp,rsp                                      ;The base pointer now points to top of stack
+   378 0000033D 57                      push rdi                                          ;Backup rdi
+   379 0000033E 56                      push rsi                                          ;Backup rsi
+   380 0000033F 52                      push rdx                                          ;Backup rdx
+   381 00000340 51                      push rcx                                          ;Backup rcx
+   382 00000341 4150                    push r8                                           ;Backup r8
+   383 00000343 4151                    push r9                                           ;Backup r9
+   384 00000345 4152                    push r10                                          ;Backup r10
+   385 00000347 4153                    push r11                                          ;Backup r11
+   386 00000349 4154                    push r12                                          ;Backup r12
+   387 0000034B 4155                    push r13                                          ;Backup r13
+   388 0000034D 4156                    push r14                                          ;Backup r14
+   389 0000034F 4157                    push r15                                          ;Backup r15
+   390 00000351 53                      push rbx                                          ;Backup rbx
+   391 00000352 9C                      pushf                                             ;Backup rflags
+   392                                  
+   393                                  
+   394                                  ;Make a copy of the passed in array of ascii values
+   395 00000353 4989FD                  mov r13, rdi                                      ;r13 is the array of char
+   396                                  
+   397                                  ;Let r14 be an index of the array r13.  Initialize to integer 0
+   398 00000356 4D31F6                  xor r14, r14
+   399                                  
+   400                                  ;Check for leading plus or minus signs
+   401 00000359 41807D002B              cmp byte [r13],'+'
+   402 0000035E 7407                    je increment_index
+   403 00000360 41807D002D              cmp byte[r13],'-'
+   404 00000365 7503                    jne continue_validation
+   405                                  increment_index:
+   406 00000367 49FFC6                  inc r14
+   407                                  
+   408                                  continue_validation:
+   409                                  
+   410                                  ;Block: loop to validate chars before the decimal point
+   411                                  loop_before_point:
+   412 0000036A B800000000                 mov rax,0
+   413 0000036F 4831FF                     xor rdi,rdi                ;Zero out rdi
+   414 00000372 438A7C3500                 mov dil,byte [r13+1*r14]   ;dil is the low byte in the register rdi; reference Jorgensen, p. 10
+   415 00000377 E85C000000                 call is_digit
+   416 0000037C 4883F800                   cmp rax,false
+   417 00000380 7405                       je is_it_radix_point
+   418 00000382 49FFC6                     inc r14
+   419 00000385 EBE3                       jmp loop_before_point
+   420                                  ;End of loop checking chars before the point is encountered.
+   421                                  
+   422                                  is_it_radix_point:
+   423                                  
+   424                                  ;Is the next value of the array a genuine radix point?
+   425 00000387 43807C35002E            cmp byte[r13+1*r14],'.'
+   426 0000038D 752C                        jne return_false
+   427                                  
+   428                                  ;A point has been found, therefore, begin a loop to process remaining digits.
+   429                                  start_loop_after_finding_a_point:
+   430 0000038F 49FFC6                      inc r14
+   431 00000392 B800000000                  mov rax,0
+   432 00000397 4831FF                      xor rdi,rdi
+   433 0000039A 438A7C3500                  mov dil,byte[r13+1*r14]
+   434 0000039F E834000000                  call is_digit
+   435 000003A4 4883F800                    cmp rax,false
+   436 000003A8 75E5                        jne start_loop_after_finding_a_point
+   437                                  ;End of loop processing valid digits after passing the one decimal point.
+   438                                  
+   439                                  ;Something other than a digit has been found.  
+   440                                  ;It should be null at the end of the string.
+   441 000003AA 43807C350000            cmp byte [r13+1*r14],null
+   442 000003B0 7509                    jne return_false
+   443 000003B2 48C7C0FFFFFFFF          mov rax,true
+   444 000003B9 EB05                    jmp restore_gpr_registers
+   445                                      
+   446                                  return_false:
+   447 000003BB B800000000              mov rax,false
+   448                                  
+   449                                  restore_gpr_registers:
+   450 000003C0 9D                      popf                                    ;Restore rflags
+   451 000003C1 5B                      pop rbx                                 ;Restore rbx
+   452 000003C2 415F                    pop r15                                 ;Restore r15
+   453 000003C4 415E                    pop r14                                 ;Restore r14
+   454 000003C6 415D                    pop r13                                 ;Restore r13
+   455 000003C8 415C                    pop r12                                 ;Restore r12
+   456 000003CA 415B                    pop r11                                 ;Restore r11
+   457 000003CC 415A                    pop r10                                 ;Restore r10
+   458 000003CE 4159                    pop r9                                  ;Restore r9
+   459 000003D0 4158                    pop r8                                  ;Restore r8
+   460 000003D2 59                      pop rcx                                 ;Restore rcx
+   461 000003D3 5A                      pop rdx                                 ;Restore rdx
+   462 000003D4 5E                      pop rsi                                 ;Restore rsi
+   463 000003D5 5F                      pop rdi                                 ;Restore rdi
+   464 000003D6 5D                      pop rbp                                 ;Restore rbp
+   465                                  
+   466 000003D7 C3                      ret                                     ;Pop the integer stack and jump to the address represented by the popped value.
+   467                                  
+   468                                  
+   469                                  
+   470                                  
+   471                                  
+   472                                  
+   473                                  
+   474                                  
+   475                                  
+   476                                  
+   477                                  
+   478                                  ;========= Begin function is_digit ==================================================================================
+   479                                  
+   480                                  ;****************************************************************************************************************************
+   481                                  ;Program name: "is_digit".  This a library function contained in a single file.  The function receives a char parameter.  It*
+   482                                  ;returns true if that parameter is the ascii value of a decimal digit and returns false in all other cases.                  *
+   483                                  ;Copyright (C) 2022 Floyd Holliday.                                                                                         *
+   484                                  ;                                                                                                                           *
+   485                                  ;This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public   *
+   486                                  ;License version 3 as published by the Free Software Foundation.  This program is distributed in the hope that it will be   *
+   487                                  ;useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.*
+   488                                  ;See the GNU Lesser General Public License for more details. A copy of the GNU General Public License v3 is available here: *
+   489                                  ;<https:;www.gnu.org/licenses/>.                                                                                            *
+   490                                  ;****************************************************************************************************************************
+   491                                  ;
+   492                                  ;
+   493                                  ;========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1=========2=========3**
+   494                                  ;Author information
+   495                                  ;  Author name: Floyd Holliday
+   496                                  ;  Author email: holliday@fullerton.edu
+   497                                  ;  Author phone (wired phone in CS building): (657)278-7021
+   498                                  ;
+   499                                  ;Status
+   500                                  ;  This software is not an application program, but rather it is a single function licensed for use by other applications.
+   501                                  ;  This function can be embedded within both FOSS programs and in proprietary programs as permitted by the LGPL.
+   502                                  
+   503                                  ;Function information
+   504                                  ;  Function name: is_digit
+   505                                  ;  Name selection.  This function is named is_digit to avoid confusion with an existing library function named isdigit.
+   506                                  ;  Programming language: X86 assembly in Intel syntax.
+   507                                  ;  Date development began:  2022-Feb-28
+   508                                  ;  Date version 1.0 finished: 2022-Feb 28
+   509                                  ;  Files of this function: currently is_digit is an auxillary function of isfloat, and as such does not occupy its own file.
+   510                                  ;  System requirements: an X86 platform with nasm installed or other compatible assembler.
+   511                                  ;  Known issues: none
+   512                                  ;  Assembler used for testing: Nasm version 2.14.02
+   513                                  ;  Prototype: bool is_digit(char);
+   514                                  ;
+   515                                  ;Purpose
+   516                                  ;  This function wil accept a single char as input parameter and determine if that parameter represents a decimal digit. 
+   517                                  ;
+   518                                  ;Translation information if this function occupied its own file.  Currently the function is_digit resides in the same 
+   519                                  ;same file as isfloat and therefore, will be assembled when isfloat is assembled.
+   520                                  ;  Assemble: nasm -f elf64 -l is_digit.lis -o is_digit.o is_digit.asm
+   521                                  ;
+   522                                  ;Software design document:
+   523                                  ;  An Execution flow chart accompanies this function.  That document will provide a better understanding of the 
+   524                                  ;  algorithm used in the isfloat function than a direct reading of the source code of the function.
+   525                                  
+   526                                  ;========= Begin source code ====================================================================================
+   527                                  ;Declaration area
+   528                                  true equ -1
+   529                                  false equ 0
+   530                                  ascii_value_of_zero equ 0x30
+   531                                  ascii_value_of_nine equ 0x39
+   532                                  
+   533                                  segment .data
+   534                                     ;This segment is empty
+   535                                  
+   536                                  segment .bss
+   537                                     ;This segment is empty
+   538                                  
+   539                                  segment .text
+   540                                  is_digit:
+   541                                  
+   542                                  ;Block that backs up almost all GPRs
+   543                                  ;Back up the general purpose registers for the sole purpose of protecting the data of the caller.
+   544 000003D8 55                      push rbp                                          ;Backup rbp
+   545 000003D9 4889E5                  mov  rbp,rsp                                      ;The base pointer now points to top of stack
+   546 000003DC 57                      push rdi                                          ;Backup rdi
+   547 000003DD 56                      push rsi                                          ;Backup rsi
+   548 000003DE 52                      push rdx                                          ;Backup rdx
+   549 000003DF 51                      push rcx                                          ;Backup rcx
+   550 000003E0 4150                    push r8                                           ;Backup r8
+   551 000003E2 4151                    push r9                                           ;Backup r9
+   552 000003E4 4152                    push r10                                          ;Backup r10
+   553 000003E6 4153                    push r11                                          ;Backup r11
+   554 000003E8 4154                    push r12                                          ;Backup r12
+   555 000003EA 4155                    push r13                                          ;Backup r13
+   556 000003EC 4156                    push r14                                          ;Backup r14
+   557 000003EE 4157                    push r15                                          ;Backup r15
+   558 000003F0 53                      push rbx                                          ;Backup rbx
+   559 000003F1 9C                      pushf                                             ;Backup rflags
+   560                                  
+   561                                  ;Make a copy of the passed in array of ascii values.
+   562                                  ;Note that only the low one-byte of rdi is important for this function is_digit.
+   563                                  ;Nevertheless, we copy the entire 8-byte register.
+   564 000003F2 41BD00000000            mov r13,0
+   565 000003F8 4188FD                  mov r13b,dil     ;Copy the low byte of rdi to the low byte of r13.  The other bytes of rdi are all zeros.
+   566                                  
+   567                                  ;Block to test if value in r13 >= ascii(0)
+   568 000003FB 4983FD30                cmp r13,ascii_value_of_zero
+   569 000003FF 7C12                    jl is_digit.return_false
+   570                                  
+   571                                  ;Block to test if value in r13 <= ascii(9)
+   572 00000401 4983FD39                cmp r13,ascii_value_of_nine
+   573 00000405 7F0C                    jg is_digit.return_false
+   574                                  
+   575                                  ;Return true
+   576 00000407 4831C0                  xor rax,rax  ;Set rax to zero
+   577 0000040A 48C7C0FFFFFFFF          mov rax,true
+   578 00000411 EB08                    jmp is_digit.restore_gpr_registers
+   579                                  
+   580                                  is_digit.return_false:
+   581 00000413 4831C0                  xor rax,rax  ;Set rax to zero
+   582 00000416 B800000000              mov rax,false
+   583                                  
+   584                                  is_digit.restore_gpr_registers:
+   585                                  ;Restore all general purpose registers to their original values
+   586 0000041B 9D                      popf                                    ;Restore rflags
+   587 0000041C 5B                      pop rbx                                 ;Restore rbx
+   588 0000041D 415F                    pop r15                                 ;Restore r15
+   589 0000041F 415E                    pop r14                                 ;Restore r14
+   590 00000421 415D                    pop r13                                 ;Restore r13
+   591 00000423 415C                    pop r12                                 ;Restore r12
+   592 00000425 415B                    pop r11                                 ;Restore r11
+   593 00000427 415A                    pop r10                                 ;Restore r10
+   594 00000429 4159                    pop r9                                  ;Restore r9
+   595 0000042B 4158                    pop r8                                  ;Restore r8
+   596 0000042D 59                      pop rcx                                 ;Restore rcx
+   597 0000042E 5A                      pop rdx                                 ;Restore rdx
+   598 0000042F 5E                      pop rsi                                 ;Restore rsi
+   599 00000430 5F                      pop rdi                                 ;Restore rdi
+   600 00000431 5D                      pop rbp                                 ;Restore rbp
+   601                                  
+   602 00000432 C3                      ret                                     ;Pop the integer stack and jump to the address represented by the popped value.
+   603                                  

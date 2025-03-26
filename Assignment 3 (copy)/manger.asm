@@ -42,6 +42,8 @@
 ; Link       : gcc -m64 -no-pie -o learn.out manager.o huron.o         |  
 ;              istriangle.o main.o -std=c2x -Wall -z noexecstack -lm   |  
 ;======================================================================|  
+
+
 global manger
 
     extern scanf
@@ -50,25 +52,27 @@ global manger
     extern huron
     extern istriangle
     extern stdin
+    extern strlen
     extern fgets
     extern strlen
-array_size equ 12
 null equ 0
 true equ -1
 false equ 0
-
+array_size equ 12
 segment .data
-    prompt_input db "For the array enter a sequence of 64-bit floats separated by white space.", 10,"After the last input press enter followed by Control+D:", 10, 0
-    output_count db "Array count is %lu", 10, 0
-    valid_input db "These inputs have been tested and they are sides of a valid triangle.", 10, 10,  0
+    prompt_input db 10, "Please enter the lengths of three sides of a triangle:", 10, 0
+    valid_input db "These inputs have been tested and they are sides of a valid triangle.", 10, 10, 0
     huron_applied db "The Huron formula will be applied to find the area.", 10, 10, 0
-    huron_area db "The area is %.2f sq units. This number will be returned to the caller module.", 10, 10, 0
-    format_string db "%s", 0
-    format_string1 db "%f", 0
-    prompt_tryagain db "That ain't no float, try again", 10, 0
-    three_inputs db "These inputs have been tested and they are not the sides of a valid triangle.", 10,10, 0
-    invalid db "These inputs have been tested and they are not the sides of a valid triangle.", 10,10, 0
-    thank_you db "Thank you", 10,10,  0
+    huron_area db "The area is %f sq units. This number will be returned to the caller module.", 10, 10, 0
+    prompt_user db "%s", 0
+    format_str db "%s", 0
+    format_float db "%f", 10, 0
+    format_hex: db "0x%lx", 10, 0
+    prompt_tryagain db "Error input try again", 10, 0
+    three_inputs db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 10, 0
+    invalid db "These inputs have been tested and they are not the sides of a valid triangle.", 10, 10,  0
+    thank_you db "Thank you", 10,10, 0
+    test_str: db "3.14", 0
     results dq 0.0
     negative_one dq -1.0
 segment .bss
@@ -83,7 +87,7 @@ segment .text
     %include "triangle.inc"
 manger:
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Back up General Purpose Registers (GPRs)             │
+    ; │ Back up General Purpose Registers (GPRs)               │
     ; └────────────────────────────────────────────────────────┘
     back_register
 
@@ -101,8 +105,8 @@ manger:
     call    printf
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Give the inputs to input_array where they are stored  │
-    ; │ in an array (nice_array)                              │
+    ; │ Give the inputs to input_array where they are stored   │
+    ; │ in an array (nice_array)                               │
     ; └────────────────────────────────────────────────────────┘
     mov     rdi, nice_array
     mov     rsi, array_size
@@ -110,14 +114,15 @@ manger:
     mov     r15, rax
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Check if there are 3 inputs                           │
-    ; │ If not, exit and prompt user to re-run the program   │
+    ; │ Check if there are 3 inputs                            │
+    ; │ If not, exit and prompt user to re-run the program     │
     ; └────────────────────────────────────────────────────────┘
     cmp     r15, 3
     jg      no_triangle
     
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Store the elements of the array in separate variables │
+    ; │ Store the elements of the array in separate variables  │
+    ; │ side_a, side_b, side_c                                 │
     ; └────────────────────────────────────────────────────────┘
     movsd   xmm15, [nice_array]  
     movsd   [side_a], xmm15   
@@ -129,14 +134,14 @@ manger:
     movsd   [side_c], xmm13   
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Print thank you message                               │
+    ; │ Print thank you message to satisfy the input example   │
     ; └────────────────────────────────────────────────────────┘
     mov     rax, 0
     mov     rdi, thank_you
     call    printf
     
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Validate the sides given                              │
+    ; │ Validate the sides given from the user                 │
     ; └────────────────────────────────────────────────────────┘
     mov     rdi, side_a
     mov     rsi, side_b
@@ -144,27 +149,29 @@ manger:
     call    istriangle
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ If istriangle returns -1, exit the program            │
+    ; │ If istriangle returns -1, exit the program and prompt  │
+    ; │ the user                                               │
     ; └────────────────────────────────────────────────────────┘
     cmp     rax, -1
     je      no_triangle
     
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Print valid input message                             │
+    ; │ Prompt the user that they have entered a valid triangle│
     ; └────────────────────────────────────────────────────────┘
     mov     rax, 0
     mov     rdi, valid_input
     call    printf
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Notify user that Heron's formula will be applied      │
+    ; │ Notify user that Heron's formula will be applied       │
     ; └────────────────────────────────────────────────────────┘
     mov     rax, 0
     mov     rdi, huron_applied
     call    printf
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Give validated inputs to huron to calculate area      │
+    ; │ Give validated inputs to huron to calculate area       │
+    ; │ with side_a, side_b, side_c                            │
     ; └────────────────────────────────────────────────────────┘
     mov     rdi, side_a
     mov     rsi, side_b
@@ -173,7 +180,7 @@ manger:
     movsd   [area], xmm0
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Print the calculated area                             │
+    ; │ Print the calculated area                              │
     ; └────────────────────────────────────────────────────────┘
     mov     rdi, huron_area  
     mov     rsi, [area] 
@@ -181,20 +188,20 @@ manger:
     call    printf 
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Restore floating-point numbers                        │
+    ; │ Restore floating-point numbers using the macro         │
     ; └────────────────────────────────────────────────────────┘
     restore_components storedata
     mov     rax, r15
     movsd   xmm0, [area]
 
     ; ┌────────────────────────────────────────────────────────┐
-    ; │ Restore GPRs and return                              │
+    ; │ Restore GPRs using the macro and return                │
     ; └────────────────────────────────────────────────────────┘
     restore_registers
     ret
 
 ; ┌────────────────────────────────────────────────────────┐
-; │ More than three inputs handler                         │
+; │ Handling more than 3 inputs, resulting in an error     │
 ; └────────────────────────────────────────────────────────┘
 more_than_three:
     mov     rax, 0
@@ -203,55 +210,57 @@ more_than_three:
     jmp     exit
 
 ; ┌────────────────────────────────────────────────────────┐
-; │ Input handling function                               │
+; │ Input handling function                                │
 ; └────────────────────────────────────────────────────────┘
 input_array:
-    back_register
-    backup_compnents storedata
+    push    rbp
+    mov     rbp, rsp
+    push    rbx
+    push    rcx
+    push    rdx
+    push    rsi
+    push    rdi
+    push    r8 
+    push    r9 
+    push    r10
+    push    r11
+    push    r12
+    push    r13
+    push    r14
+    push    r15
+    pushf
+
+    mov     rax, 7
+    mov     rdx, 0
+    xsave   [storedata]
 
     mov     r13, rdi    ; r13 contains the array
     mov     r14, rsi    ; r14 contains the max size
     mov     r15, 0      ; r15 is the index of the loop
-    sub     rsp, 524   ; Create a 1024-bit temporary space on the stack
+    sub     rsp, 16     ; Allocate only 16 bytes for input
 
 begin:
     mov     rax, 0
-    mov     rdi, rsp
-    mov     rsi, 512
-    mov     rdx, [stdin]
-    call    fgets
+    mov     rdi, prompt_user
+    mov     rsi, rsp
+    call    scanf
 
-    cmp     rax, 0
+    cdqe
+    cmp     rax, -1
     je      exit
 
-    mov     rdi, rsp
-    call    strlen
-    mov     rbx, rax
-    dec     rbx
-
-    mov     byte [rdi + rbx], 0x00
-
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Check if the input is a valid float                   │
-    ; └────────────────────────────────────────────────────────┘
     mov     rax, 0
     mov     rdi, rsp
     call    isfloat
     cmp     rax, 0
     je      tryagain
 
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Convert input into a float                            │
-    ; └────────────────────────────────────────────────────────┘
     mov     rax, 0
     mov     rdi, rsp
+    sub     rsp, 8  ; Ensure 16-byte alignment
     call    atof
-    movsd   xmm12, xmm0
+    add     rsp, 8  ; Restore stack
 
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Store float into array                                │
-    ; └────────────────────────────────────────────────────────┘
-    movsd   [r13 + r15 * 8], xmm12
     inc     r15
     cmp     r15, r14
     jl      begin
@@ -264,27 +273,39 @@ tryagain:
     jmp     begin
 
 exit:
-    add     rsp, 524
-    restore_components storedata
-    mov     rax, r15
-    restore_registers
-    ret
+    add     rsp, 16   ; Restore stack
 
+    mov     rax, 7
+    mov     rdx, 0
+    xrstor  [storedata]
+
+    mov     rax, r15
+
+    popf          
+    pop     r15
+    pop     r14
+    pop     r13
+    pop     r12
+    pop     r11
+    pop     r10
+    pop     r9 
+    pop     r8 
+    pop     rdi
+    pop     rsi
+    pop     rdx
+    pop     rcx
+    pop     rbx
+    pop     rbp
+
+    ret
 ; ┌────────────────────────────────────────────────────────┐
-; │ No valid triangle handler                             │
+; │ No valid triangle handler and return negative one      │
 ; └────────────────────────────────────────────────────────┘
 no_triangle:
     mov     rax, 0
     mov     rdi, invalid
     call    printf
     movsd   xmm0, [negative_one]
-    restore_registers
-    retno_triangle:
-    mov rax, 0
-    mov rdi, invalid
-    call printf
-    movsd xmm0, [negative_one]
-    ;Restore the original values to the GPRs
     restore_registers
     ret
 ;****************************************************************************************************************************

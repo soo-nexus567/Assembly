@@ -9,12 +9,13 @@ global manager
     extern strlen
     extern stdin
     extern atof
+    extern hsum
 segment .data
     array_line1 db "This program will manage your array of 64-bit floats", 10, 0
     array_line2 db "For the array enter a sequence of 64-bit floats separated by white space", 10, 0 
     array_line3 db "After the last input press enter following by Control+D:", 10, 0
-    msg_array_output db "THese number were recieved in this array is: ", 10, 0
-    msg_array_sum  db "The sum of the %d numbers in this array is %f", 10, 0
+    msg_array_output db "These number were recieved in this array is: ", 10, 0
+    msg_array_sum  db "The sum is %f", 10, 0
     msg_array_mean db "The arithmetic mean of the numbers in the array is %f", 10, 0
     msg_array_sort db "This is the array after the sort process completed:", 10, 0
     fmt_int db "%f", 10, 0
@@ -24,6 +25,7 @@ segment .bss
     align 64
     storedata resb 832
     nice_array resq max_array_count
+    harmatic_sum resq 1
 
 segment .text
     global manager
@@ -67,7 +69,7 @@ manager:
     mov     rdi, nice_array
     mov     rsi, max_array_count
     call    input_array
-    mov     r15, rax
+    mov     r15, rax    
 
     mov rax, 0
     mov rdi, msg_array_output
@@ -78,44 +80,19 @@ manager:
     call output_array
 
     mov rdi, nice_array
-    mov rsi,r15
-    call sum
-    movsd xmm4, xmm0
-    movsd [sum_num], xmm4
-    cvtsi2sd xmm1, r15
-    divsd xmm4, xmm1
-    movsd [results], xmm4
-
+    mov rsi, r15
+    call hsum
+    movsd [harmatic_sum], xmm0
     mov     rax, 1 
     mov     rdi, msg_array_sum 
-    mov     rsi, r15     
-    mov     rdx, r14
+    mov     rsi, harmatic_sum
     call    printf
-
-    movsd xmm0, [results]
-    mov rdi, msg_array_mean
-    mov rax, 1
-    call printf
-
-    mov     rdi, nice_array
-    mov     rsi, r15                
-    call    sort_array
-
-    mov rdi, msg_array_sort
-    mov rax, 1
-    call printf
-
-    mov rdi, nice_array
-    mov rsi, r15
-    call output_array
-
-    movsd xmm0, [sum_num]
 
     mov     rax, 7
     mov     rdx, 0
     xrstor  [storedata]
 
-    movsd xmm0, [sum_num]
+    movsd xmm0, [harmatic_sum]
     movsd xmm0, xmm0
      ; Restore the general purpose registers
     popf          
