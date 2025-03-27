@@ -1,17 +1,18 @@
 global fill_random_array
-extern printf
-extern scanf
-extern fgets
-extern strlen
-extern cos
-extern stdin
-extern input_array
+    extern printf
+    extern scanf
+    extern fgets
+    extern strlen
+    extern cos
+    extern stdin
+    extern input_array
+    extern isnan
 
 segment .data
     fmt_failed db "RDRAND failed. Retrying...", 10, 0  ; Debug message when rdrand fails
     fmt_rax db "RDRAND value: %llx", 10, 0              ; Format string for printing the value in rax
     fmt_float db "Random double: %lf", 10, 0             ; Format string for printing a float
-
+    r14_value dq 0
 segment .bss
     align 64
     storedata resb 832           ; Space to store saved register state
@@ -47,55 +48,42 @@ fill_random_array:
     mov     r15, 0                 ; Initialize counter for valid floats
     sub     rsp, 1024              ; Allocate space on the stack
 
-    ; Ensure we don't generate more than 100 random numbers
-    cmp     r14, 6               ; Check if the value in rsi exceeds 100
-    jg      set_max_size           ; If rsi > 100, set it to 100
-
     ; If rsi <= 100, continue as normal
-    mov     r14, rsi               ; Set r14 to rsi (number of random floats to generate)
     jmp     generate_random_floats ; Jump to generating the floats
 
 set_max_size:
-    mov     r14, 6               ; Set the number of elements to 100 if rsi > 100
+    mov     r14, 100               ; Set the number of elements to 100 if rsi > 100
 
 generate_random_floats:
-    ; Generate random numbers and store them in nice_array
-    mov     rbx, r14               ; Set rbx to the number of floats to generate (r14)
+    mov     rbx, r14               ; Number of floats to generate
     
 generate_loop:
-    ; Generate a random number and store it in the nice_array
+    cmp     r15, r14               ; Check if we've generated the required floats
+    jge     end_loop               ; If we reached the limit, exit
+
     rdrand  rax                    ; Generate a random 64-bit integer
-    jc      store_float            ; If the random number is successfully generated, store it
-    
-    ; Print a message or value to see if rdrand keeps failing
-    mov rdi, fmt_failed
-    call printf
+    jnc     generate_loop           ; Retry if rdrand fails
 
-    ; Print the raw value in rax to check randomness
-    mov rdi, fmt_rax               ; Assuming fmt_rax is the format string "%llx\n"
-    mov rsi, rax
-    call printf
+    ; Normalize to [0,1) range by dividing by 2^64
+    mov     rcx, 0x3DF0000000000000 ; 2^(-64) as an IEEE 754 double
+    movq    xmm1, rcx               ; Load into xmm1
+    cvtsi2sd xmm0, rax              ; Convert integer to double
+    mulsd   xmm0, xmm1              ; Scale it to [0,1)
 
-    ; Retry rdrand if it fails
-    jmp     generate_loop          ; Retry if rdrand failed
+    ; Check if the number is NaN using ucomisd
+    ucomisd xmm0, xmm0              ; NaN check: NaN is always unordered (!= itself)
+    jp      generate_loop            ; Jump if NaN (parity flag is set)
 
-store_float:
-    ; Print the raw value to verify the number being stored
-    mov rdi, fmt_float
-    mov rsi, rax                   ; Print the random number directly
-    call printf
+    ; Store the float in nice_array
+    movsd   [r13 + r15 * 8], xmm0   ; Store result
+    inc     r15                     ; Increment count
+    jmp     generate_loop           
 
-    ; Convert the integer in rax to a double-precision float (xmm0)
-    cvtsi2sd xmm0, rax             ; Convert 64-bit integer in rax to double-precision float (xmm0)
-
-    ; Store the double in nice_array (64-bit IEEE 754)
-    movsd   [r13 + r15 * 8], xmm0  ; Store the float in nice_array
-    inc     r15                     ; Increment the counter
-    dec     rbx                     ; Decrease the remaining count
-    jnz     generate_loop           ; Repeat until we have generated the required number of floats
-
-    jmp end_loop
-
+nan_detected:
+    ; Print an error message if NaN is detected
+    ; mov     rdi, fmt_nan            ; Assume fmt_nan is "Generated NaN!\n"
+    ; call    printf
+    jmp     generate_loop           ; Retry generating a new number
 end_loop:
     ; Clean up the stack space
     add     rsp, 1024              ; Restore the stack space allocated at the beginning
@@ -116,4 +104,14 @@ end_loop:
     pop     r12                     ; Restore r12
     pop     r11                     ; Restore r11
     pop     r10                     ; Restore r10
-    pop     r9                      ; Restore r
+    pop     r9                      ; Restore r9
+    pop     r8                      ; Restore r8
+    pop     rdi                     ; Restore rdi
+    pop     rsi                     ; Restore rsi
+    pop     rdx                     ; Restore rdx
+    pop     rcx                     ; Restore rcx
+    pop     rbx                     ; Restore rbx
+
+    ; Restore the base pointer and return from the function
+    pop     rbp
+    ret

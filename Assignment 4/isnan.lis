@@ -1,0 +1,89 @@
+     1                                  ;****************************************************************************************************************************
+     2                                  ; Program name: Identify Nans.  This is a driver function used for testing the library function isnan.  This function sets  *
+     3                                  ; up a call to isnan.  The user can easily verify the correctness of isnan by visual inspection.                            *
+     4                                  ; This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public  *
+     5                                  ; License (LGPL3) version 3 as published by the Free Software Foundation.  This program is distributed in the hope that it  *
+     6                                  ; will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR*
+     7                                  ; PURPOSE.  See the GNU Lesser General Public License for more details.  A copy of the GNU Lesser Public License v3 is      *
+     8                                  ; available here: <https://www.gnu.org/licenses/>.                                                                          *
+     9                                  ;****************************************************************************************************************************
+    10                                  ; Programmer's name: F. Holliday
+    11                                  ; Email: holliday@fullerton.edu
+    12                                  ; Function name: isnan
+    13                                  
+    14                                  ; Purpose:  This is a library function.  This function, isnan, will determine if an IEEE float number is a nan or not a nan.
+    15                                  
+    16                                  ;This implementation of the isnan algorithm is intended to be the simplest and minimalist
+    17                                  ;implementation possible.
+    18                                  
+    19                                  ;Prototype:   long isnan(double floatnumber);
+    20                                  
+    21                                  global isnan
+    22                                      extern printf
+    23                                  segment .data
+    24                                     ;Empty
+    25 00000000 48456C6C6F0A00             prompt db "HEllo", 10, 0
+    26                                  
+    27                                  segment .bss
+    28                                      ;Empty
+    29                                  
+    30                                  segment .txt
+    31                                  isnan:
+    32                                  ;Back up the GPRs (General Purpose Registers)
+    33 00000000 55                      push rbp
+    34 00000001 4889E5                  mov rbp, rsp
+    35 00000004 53                      push rbx
+    36 00000005 51                      push rcx
+    37 00000006 52                      push rdx
+    38 00000007 57                      push rdi
+    39 00000008 56                      push rsi
+    40 00000009 4150                    push r8
+    41 0000000B 4151                    push r9
+    42 0000000D 4152                    push r10
+    43 0000000F 4153                    push r11
+    44 00000011 4154                    push r12
+    45 00000013 4155                    push r13
+    46 00000015 4156                    push r14
+    47 00000017 4157                    push r15
+    48 00000019 9C                      pushf
+    49 0000001A B800000000              mov rax, 0
+    50 0000001F 48BF-                   mov rdi, prompt
+    50 00000021 [0000000000000000] 
+    51 00000029 E8(00000000)            call printf
+    52                                  ; ;Copy the incoming parameter to a GPR
+    53                                  ; push qword 0
+    54                                  ; movsd [rdi],xmm0
+    55                                  ; pop r8
+    56                                  
+    57                                  ; ;Use shift instructions to isolate the stored exponent in the low end of r8
+    58                                  ; shl r8, 1
+    59                                  ; shr r8, 53
+    60                                  
+    61                                  ; ;Is r8 equal to 2047 or not?
+    62                                  ; cmp r8,2047
+    63                                  ; je it_is_a_nan
+    64                                  ; mov rax,0        ;0=false
+    65                                  ; jmp next
+    66                                  ; it_is_a_nan:
+    67                                  ; mov rax, 1       ;1-true
+    68                                  ; next:
+    69                                  
+    70                                  ; ;rax will be returned to the caller
+    71                                  
+    72                                  ;Restore backed up general registers
+    73 0000002E 9D                      popf
+    74 0000002F 415F                    pop r15
+    75 00000031 415E                    pop r14
+    76 00000033 415D                    pop r13
+    77 00000035 415C                    pop r12
+    78 00000037 415B                    pop r11
+    79 00000039 415A                    pop r10
+    80 0000003B 4159                    pop r9
+    81 0000003D 4158                    pop r8
+    82 0000003F 5E                      pop rsi
+    83 00000040 5F                      pop rdi
+    84 00000041 5A                      pop rdx
+    85 00000042 59                      pop rcx
+    86 00000043 5B                      pop rbx
+    87 00000044 5D                      pop rbp   ; Restore rbp to the base of the activation record of the caller program
+    88 00000045 C3                      ret

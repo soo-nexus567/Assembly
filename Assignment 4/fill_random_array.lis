@@ -1,0 +1,130 @@
+     1                                  global fill_random_array
+     2                                  extern printf
+     3                                  extern scanf
+     4                                  extern fgets
+     5                                  extern strlen
+     6                                  extern cos
+     7                                  extern stdin
+     8                                  extern input_array
+     9                                  
+    10                                  segment .data
+    11 00000000 524452414E44206661-         fmt_failed db "RDRAND failed. Retrying...", 10, 0  ; Debug message when rdrand fails
+    11 00000009 696C65642E20526574-
+    11 00000012 7279696E672E2E2E0A-
+    11 0000001B 00                 
+    12 0000001C 524452414E44207661-         fmt_rax db "RDRAND value: %llx", 10, 0              ; Format string for printing the value in rax
+    12 00000025 6C75653A20256C6C78-
+    12 0000002E 0A00               
+    13 00000030 52616E646F6D20646F-         fmt_float db "Random double: %lf", 10, 0             ; Format string for printing a float
+    13 00000039 75626C653A20256C66-
+    13 00000042 0A00               
+    14 00000044 0000000000000000            r14_value dq 0
+    15                                  segment .bss
+    16                                      align 64
+    17 00000000 <res 340h>                  storedata resb 832           ; Space to store saved register state
+    18 00000340 <res 320h>                  nice_array resq 100          ; Space for 100 floats
+    19                                  
+    20                                  segment .text
+    21                                      global fill_random_array
+    22                                  
+    23                                  fill_random_array:
+    24                                      ; Backup registers and save components
+    25 00000000 55                          push    rbp                   ; Save the base pointer
+    26 00000001 4889E5                      mov     rbp, rsp              ; Set up the new base pointer
+    27 00000004 53                          push    rbx                   ; Save registers
+    28 00000005 51                          push    rcx
+    29 00000006 52                          push    rdx
+    30 00000007 56                          push    rsi
+    31 00000008 57                          push    rdi
+    32 00000009 4150                        push    r8
+    33 0000000B 4151                        push    r9
+    34 0000000D 4152                        push    r10
+    35 0000000F 4153                        push    r11
+    36 00000011 4154                        push    r12
+    37 00000013 4155                        push    r13
+    38 00000015 4156                        push    r14
+    39 00000017 4157                        push    r15
+    40 00000019 9C                          pushf                           ; Save flags
+    41 0000001A B807000000                  mov rax,7
+    42 0000001F BA00000000                  mov rdx,0
+    43 00000024 0FAE2425[00000000]          xsave [storedata]              ; Save the state of the processor
+    44                                  
+    45 0000002C 4989FD                      mov     r13, rdi               ; r13 holds the pointer to the array for valid floats
+    46 0000002F 4989F6                      mov     r14, rsi               ; rsi holds the number of random numbers to generate
+    47 00000032 41BF00000000                mov     r15, 0                 ; Initialize counter for valid floats
+    48 00000038 4881EC00040000              sub     rsp, 1024              ; Allocate space on the stack
+    49                                  
+    50                                      ; If rsi <= 100, continue as normal
+    51 0000003F EB06                        jmp     generate_random_floats ; Jump to generating the floats
+    52                                  
+    53                                  set_max_size:
+    54 00000041 41BE64000000                mov     r14, 100               ; Set the number of elements to 100 if rsi > 100
+    55                                  
+    56                                  generate_random_floats:
+    57                                      ; Generate random numbers and store them in nice_array
+    58 00000047 4C89F3                      mov     rbx, r14               ; Set rbx to the number of floats to generate (r14)
+    59                                      
+    60                                  generate_loop:
+    61                                      ; Ensure we don't exceed the size of nice_array
+    62 0000004A 4D39F7                      cmp     r15, r14               ; Check if we've generated 100 floats
+    63 0000004D 7D3D                        jge     end_loop               ; If we've generated 100, exit the loop
+    64                                  
+    65                                      ; Generate a random number and store it in the nice_array
+    66 0000004F 480FC7F0                    rdrand  rax                    ; Generate a random 64-bit integer
+    67 00000053 7223                        jc      store_float            ; If the random number is successfully generated, store it
+    68                                      
+    69                                      ; Print a message or value to see if rdrand keeps failing
+    70 00000055 48BF-                       mov rdi, fmt_failed
+    70 00000057 [0000000000000000] 
+    71 0000005F E8(00000000)                call printf
+    72                                  
+    73                                      ; Print the raw value in rax to check randomness
+    74 00000064 48BF-                       mov rdi, fmt_rax               ; Assuming fmt_rax is the format string "%llx\n"
+    74 00000066 [1C00000000000000] 
+    75 0000006E 4889C6                      mov rsi, rax
+    76 00000071 E8(00000000)                call printf
+    77                                  
+    78                                      ; Retry rdrand if it fails
+    79 00000076 EBD2                        jmp     generate_loop          ; Retry if rdrand failed
+    80                                  
+    81                                  store_float:
+    82                                      ; Normalize the random number to a floating-point range [0, 1)
+    83 00000078 F2480F2AC0                  cvtsi2sd xmm0, rax             ; Convert 64-bit integer in rax to double-precision float (xmm0)
+    84                                  
+    85                                      ; Store the double in nice_array (64-bit IEEE 754)
+    86 0000007D F2430F1144FD00              movsd   [r13 + r15 * 8], xmm0  ; Store the float in nice_array
+    87 00000084 49FFC7                      inc     r15                     ; Increment the counter
+    88 00000087 48FFCB                      dec     rbx                     ; Decrease the remaining count
+    89 0000008A 75BE                        jnz     generate_loop           ; Repeat until we have generated the required number of floats
+    90                                  
+    91                                  end_loop:
+    92                                      ; Clean up the stack space
+    93 0000008C 4881C400040000              add     rsp, 1024              ; Restore the stack space allocated at the beginning
+    94                                  
+    95                                      ; Restore processor state
+    96 00000093 B807000000                  mov rax, 7
+    97 00000098 BA00000000                  mov rdx, 0
+    98 0000009D 0FAE2C25[00000000]          xrstor [storedata]             ; Restore the saved state of the processor
+    99                                  
+   100                                      ; Return the number of valid floats (r15)
+   101 000000A5 4C89F8                      mov     rax, r15               ; Set the return value to the number of valid floats (r15)
+   102                                  
+   103                                      ; Restore registers
+   104 000000A8 9D                          popf                            ; Restore flags
+   105 000000A9 415F                        pop     r15                     ; Restore r15
+   106 000000AB 415E                        pop     r14                     ; Restore r14
+   107 000000AD 415D                        pop     r13                     ; Restore r13
+   108 000000AF 415C                        pop     r12                     ; Restore r12
+   109 000000B1 415B                        pop     r11                     ; Restore r11
+   110 000000B3 415A                        pop     r10                     ; Restore r10
+   111 000000B5 4159                        pop     r9                      ; Restore r9
+   112 000000B7 4158                        pop     r8                      ; Restore r8
+   113 000000B9 5F                          pop     rdi                     ; Restore rdi
+   114 000000BA 5E                          pop     rsi                     ; Restore rsi
+   115 000000BB 5A                          pop     rdx                     ; Restore rdx
+   116 000000BC 59                          pop     rcx                     ; Restore rcx
+   117 000000BD 5B                          pop     rbx                     ; Restore rbx
+   118                                  
+   119                                      ; Restore the base pointer and return from the function
+   120 000000BE 5D                          pop     rbp
+   121 000000BF C3                          ret
