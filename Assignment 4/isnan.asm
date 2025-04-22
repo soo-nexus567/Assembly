@@ -1,35 +1,63 @@
 ;****************************************************************************************************************************
-; Program name: Identify Nans.  This is a driver function used for testing the library function isnan.  This function sets  *
-; up a call to isnan.  The user can easily verify the correctness of isnan by visual inspection.                            *
-; This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public  *
-; License (LGPL3) version 3 as published by the Free Software Foundation.  This program is distributed in the hope that it  *
-; will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR*
-; PURPOSE.  See the GNU Lesser General Public License for more details.  A copy of the GNU Lesser Public License v3 is      *
-; available here: <https://www.gnu.org/licenses/>.                                                                          *
+;Program name: "Non-deterministic random numbers".  This program takes an input from the user for how many values to create in an array, then generates random numbers into the array and normalizes and sorts them.
+; Copyright (C) 2024  Kaitlyn Lee.          *
+;                                                                                                                           *
+;This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License  *
+;version 3 as published by the Free Software Foundation.  This program is distributed in the hope that it will be useful,   *
+;but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See   *
+;the GNU General Public License for more details A copy of the GNU General Public License v3 is available here:             *
+;<https://www.gnu.org/licenses/>.                                                                                           *
 ;****************************************************************************************************************************
-; Programmer's name: F. Holliday
-; Email: holliday@fullerton.edu
-; Function name: isnan
 
-; Purpose:  This is a library function.  This function, isnan, will determine if an IEEE float number is a nan or not a nan.
 
-;This implementation of the isnan algorithm is intended to be the simplest and minimalist
-;implementation possible.
 
-;Prototype:   long isnan(double floatnumber);
+
+;========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1=========2=========3**
+;Author information
+;  Author name: Kaitlyn Lee
+;  Author email: kaitlynlee@csu.fullerton.edu
+;  CWID: 886374479
+;  Class: 240-03 Section 03
+;
+;Program information
+;  Program name: Non-deterministic random numbers
+;  Programming languages: Two modules in C++, five in x86, and one in bash
+;  Date program began: 2024-Apr-3
+;  Date of last update: 2024-Apr-14
+;  Files in this program: main.cpp, executive.asm, fill_random_array.asm, normalize_array.asm, isnan.asm, show_array.asm, sort.cpp, r.sh.
+;  Testing: Alpha testing completed.  All functions are correct.
+;  Status: Ready for release to customers
+;
+;Purpose
+;  This program takes an input from the user for how many values to create in an array, then generates
+;  random numbers into the array and normalizes and sorts them.
+;
+;This file:
+;  File name: isnan.asm
+;  Language: X86-64
+;  Max page width: 124 columns
+;  Assemble (standard): nasm -f elf64 -o isnan.o isnan.asm
+;  Assemble (debug): nasm -f elf64 -gdwarf -o isnan.o isnan.asm
+;  Optimal print specification: Landscape, 7 points, monospace, 8½x11 paper
+;  Prototype of this function: extern bool isnan();
+; 
+;
+;
+;
+;========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1=========2=========3**
+
+;declarations
 
 global isnan
-    extern printf
-segment .data
-   ;Empty
-   prompt db "HEllo", 10, 0
 
-segment .bss
-    ;Empty
+segment .data                 ;Place initialized data here
 
-segment .txt
+segment .bss      ;Declare pointers to un-initialized space in this segment.
+
+segment .text
 isnan:
-;Back up the GPRs (General Purpose Registers)
+
+;backup GPRs
 push rbp
 mov rbp, rsp
 push rbx
@@ -46,30 +74,23 @@ push r13
 push r14
 push r15
 pushf
-mov rax, 0
-mov rdi, prompt
-call printf
-; ;Copy the incoming parameter to a GPR
-; push qword 0
-; movsd [rdi],xmm0
-; pop r8
 
-; ;Use shift instructions to isolate the stored exponent in the low end of r8
-; shl r8, 1
-; shr r8, 53
+;move our number to a non volatile register to check it
+movsd xmm15, xmm0
 
-; ;Is r8 equal to 2047 or not?
-; cmp r8,2047
-; je it_is_a_nan
-; mov rax,0        ;0=false
-; jmp next
-; it_is_a_nan:
-; mov rax, 1       ;1-true
-; next:
+;check if number is a nan, if it is: jump to nan, if it is not: move a 1 to rax to return that it is not a nan them jump to exit the function
+ucomisd xmm15, xmm15
+jp nan
+mov rax, 1
+jmp exit
 
-; ;rax will be returned to the caller
+;mov a 0 to rax to return that the number is a nan
+nan:
+mov rax, 0  ;this is a nan
 
-;Restore backed up general registers
+;exit the function
+exit:
+;Restore the GPRs
 popf
 pop r15
 pop r14
@@ -84,5 +105,6 @@ pop rdi
 pop rdx
 pop rcx
 pop rbx
-pop rbp   ; Restore rbp to the base of the activation record of the caller program
+pop rbp   ;Restore rbp to the base of the activation record of the caller program
 ret
+;End of the function isnan ====================================================================

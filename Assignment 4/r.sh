@@ -10,5 +10,5 @@ gcc -c -m64 -Wall -fno-pie -no-pie -o sort.o sort.c
 
 gcc -m64 -no-pie -o learn.out fill_random_array.o normalize_array.o show_array.o executive.o main.o sort.o isnan.o -std=c2x -Wall -z noexecstack -lm
 
-chmod +x r.sh
+chmod +x learn.out
 ./learn.out

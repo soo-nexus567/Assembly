@@ -59,7 +59,7 @@ hsum:
     mov     rax, 7
     mov     rdx, 0
     xsave   [storedata]
-
+sort_array
     mov     r15, rdi    ; Array
     mov     r14, rsi    ; Count
     mov     r13, 0      ; Counter

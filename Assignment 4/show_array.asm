@@ -1,15 +1,55 @@
+;Copyright Info
+;  "Assignment 4" is free software: you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation, either version 3 of the License, or
+;  (at your option) any later version.
+
+;  "Assignment 4" is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY// without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+
+;  You should have received a copy of the GNU General Public License
+;  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+;Author information
+;  Author name: Jonathan Soo
+;  Author email: jonathansoo07@csu.fullerton.edu
+;  Author section: 240-11
+;  Author CWID : 884776980
+;Purpose
+;  Calculate the third side of a triangle using float-point arthmetic
+;  Get input from user and ouput using C functions
+
+;Program information
+;  Program name: Assignment 4
+;  Copyright (C) <2025> <Jonathan Soo>
+;  Programming languages: Several modules in x86-64 and two in C
+;  Date program began:     2025-March-25
+;  Date program completed: 2025-March-26
+;  Date comments upgraded: 2025-March-27
+;  Files in this program: executive.asm, fill_random_array.asm, isnan.asm, main.c, sort.c, normalize_array.asm, show_array.asm, r.sh
+;  Status: Complete.  No errors found after extensive testing.
+;
+;This file
+;   File name: show_array.asm
+;   Language: x86-64
+;   Assemble: nasm -f elf64 -o show_array.o show_array.asm
+;   Editor: VS Code
+;   Link: gcc -m64 -no-pie -o learn.out fill_random_array.o normalize_array.o show_array.o executive.o main.o sort.o isnan.o -std=c2x -Wall -z noexecstack -lm
 global show_array
 extern printf
 
 segment .data
     prompt db "IEEE754		      Scientific Decimal", 10, 0
     msg_ieee db "%p", 0
-    msg_sci  db "    %.13e", 10, 0          ; Format string for scientific decimal output
+    msg_sci  db "    %.13e", 10, 0          
     fmt_debug db "%p", 10, 0
 
 segment .text
 show_array:
-    ; 15 pushes to preserve registers
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | 15 pushes to preserve registers before beginning the function          |
+    ; └────────────────────────────────────────────────────────────────────────┘
     push    rbp                     ; Backup rbp
     mov     rbp,rsp                 ; The base pointer now points to top of stack
     push    rdi                     ; Backup rdi
@@ -27,37 +67,47 @@ show_array:
     push    rbx                     ; Backup rbx
     pushf                           ; Backup rflags
 
-    mov     r15, rdi                ; Store the array pointer into r15
-    mov     r14, rsi                ; Store the count of the array into r14
-    mov     r13, 0                  ; Set r13 as the counter
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Set up registers for array processing (r15 holds array, r14 holds size)|
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     r15, rdi                  
+    mov     r14, rsi              
+    mov     r13, 0                    
     
-    mov rax, 0
-    mov rdi, prompt
-    call printf
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Prompt for array display                                             |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     rax, 0
+    mov     rdi, prompt              
+    call    printf
+
 begin:
-    ; Load the double value from the array
-    ; movsd   xmm0, [r15 + r13 * 8]   ; Load the double at index r13 into xmm0
-    ; mov     rdi, fmt_debug           ; Assuming fmt_debug is "%p\n" to print the memory address
-    ; mov     rsi, [r15 + r13 * 8]     ; Load the address of the current value
-    ; call    printf                   ; Print the memory address of the value being accessed
-    ; Print IEEE754 format (64-bit hex)
-    mov     rdi, msg_ieee           ; Set format for hex output
-    mov   rsi, [r15 + r13 * 8]                ; Move the 64-bit value to rsi for printf
-    call    printf                  ; Print the IEEE754 format
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Load the double at index r13 into xmm0 and print its memory address    |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     rdi, msg_ieee  
+    mov     rsi, [r15 + r13 * 8]      
+    call    printf                    
 
-    mov rdi, msg_sci
-    movsd xmm0, [r15+ r13 *8]
-    call printf
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Print the value in IEEE754 format (64-bit hex)                         |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     rdi, msg_sci              
+    movsd   xmm0, [r15 + r13 * 8]    
+    call    printf                       
 
-    ; Increase the loop counter. Check if the counter >= the count of the array.
-    ; If it is, return. If it is not, jump back to the beginning
-    inc     r13
-    cmp     r13, r14
-    jge     exit
-    jmp     begin
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Increase the loop counter and check if all array elements have been processed |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    inc     r13                       
+    cmp     r13, r14                  
+    jge     exit             
+    jmp     begin                      
 
 exit:
-    ; Restore registers
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Restore registers before returning from the function                  |
+    ; └────────────────────────────────────────────────────────────────────────┘
     popf                            ; Restore rflags
     pop     rbx                     ; Restore rbx
     pop     r15                     ; Restore r15
@@ -74,4 +124,4 @@ exit:
     pop     rdi                     ; Restore rdi
     pop     rbp                     ; Restore rbp
 
-    ret
+    ret                             ; Return from the function

@@ -1,16 +1,59 @@
+; Copyright Info
+; "Assignment 4" is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+
+; "Assignment 4" is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY// without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+
+; You should have received a copy of the GNU General Public License
+; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+; Author information
+; Author name: Jonathan Soo
+; Author email: jonathansoo07@csu.fullerton.edu
+; Author section: 240-11
+; Author CWID : 884776980
+; Purpose: Calculate the third side of a triangle using floating-point arithmetic
+; Get input from user and output using C functions
+
+; Program information
+; Program name: Assignment 4
+; Copyright (C) <2025> <Jonathan Soo>
+; Programming languages: Several modules in x86-64 and two in C
+; Date program began:     2025-March-25
+; Date program completed: 2025-March-26
+; Date comments upgraded: 2025-March-27
+; Files in this program: executive.asm, fill_random_array.asm, isnan.asm, main.c, sort.c, normalize_array.asm, show_array.asm, r.sh
+; Status: Complete.  No errors found after extensive testing.
+
+; This file
+; File name: normalize_array.asm
+; Language: x86-64
+; Assemble: nasm -f elf64 -o normalize_array.o normalize_array.asm
+; Editor: VS Code
+; Link: gcc -m64 -no-pie -o learn.out fill_random_array.o normalize_array.o show_array.o executive.o main.o sort.o isnan.o -std=c2x -Wall -z noexecstack -lm
+
 global normalize_array
 
-segment .data                 ;Place initialized data here
+segment .data
+    ; Define the exponent mask as two 32-bit parts to avoid overflow
+    mask_upper dq 0x3ff0000000000000
 
-segment .bss      ;Declare pointers to un-initialized space in this segment.
+segment .bss
+    align 64
+    storedata resb 832
+    nice_array resq 100
 
 segment .text
 normalize_array:
-
-    ;backup GPRs
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Preserve important registers                                          |
+    ; └────────────────────────────────────────────────────────────────────────┘
     push rbp
-    mov rbp, rsp
-    push rbx
+    push rbx                     ; Save registers that might be used
     push rcx
     push rdx
     push rdi
@@ -23,84 +66,96 @@ normalize_array:
     push r13
     push r14
     push r15
-    pushf
+    pushf                        ; Save the flags register
+    mov     rax, 7
+    mov     rdx, 0
+    xsave   [storedata]
 
-    ;obtain array address and size and store in nonvolatile registers
-    mov r15, rdi ;our array
-    mov r14, rsi ;number of values 
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Retrieve array address and size, store in designated registers        |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     r15, rdi               
+    mov     r14, rsi                
 
-    ;set counter to 0 to keep track of all the numbers that have already been normalized
-    mov r13, 0
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Initialize loop counter                                              |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     r13, 0                  
 
-    ; Find the maximum value in the array
-    mov r12, 0         ; Start loop counter
-    movsd xmm0, [r15]  ; Assume first element is max
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Check if the array has been fully normalized                         |
+    ; └────────────────────────────────────────────────────────────────────────┘
+check_progress:
+    cmp r13, r14                 
+    jl process_normalization 
 
-find_max:
-    cmp r12, r14
-    jge check_capacity  ; If counter >= size, move to normalization
-    movsd xmm1, [r15+r12*8]
-    comisd xmm0, xmm1  ; Compare current max with next element
-    jb update_max      ; If xmm1 is larger, update max
-    jmp continue_max
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | All elements normalized, exit the function                           |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    jmp finish                    
 
-update_max:
-    movsd xmm0, xmm1   ; Update max value
+process_normalization:
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Load the current value from the array into xmm10                      |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    movsd   xmm15, [r15 + r13 * 8]
 
-continue_max:
-    inc r12
-    jmp find_max
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Backup the value into stack memory for manipulation                   |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    push    qword 0                
+    movsd   [rsp], xmm15            
+    pop     r12                       
 
-    ;check if all values in the array have been normalized
-check_capacity:
-    cmp r13, r14
-    jl is_less
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Isolate the exponent and normalize the number to range 1.0 to 2.0    |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    shl     r12, 12
+    shr     r12, 12
+    mov     rax, r12
+    mov     rax, [mask_upper]      
+    or      r12, rax              
 
-    ;if all numbers have been normalized, jump to exit the function
-    jmp exit
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Store the normalized value back into xmm10                           |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    push    r12                      
+    movsd   xmm15, [rsp] 
+    pop     r12            
 
-    ;jump here if array hasnt been fully normalized to continue normalizing
-is_less:
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Place the normalized value back into the array at index r13          |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    movsd   [r15 + r13 * 8], xmm15
 
-    ;mov number from array onto the stack and into r12 to change the stored exp to 3ff to make the value in between 1 and 2
-    movsd xmm15, [r15+r13*8]
-    push qword 0
-    movsd [rsp], xmm15
-    pop r12
-    shl r12, 12
-    shr r12, 12
-    mov rax, 0x3ff0000000000000
-    or r12, rax
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Increment counter and loop back to check if all elements are processed|
+    ; └────────────────────────────────────────────────────────────────────────┘
+    inc     r13                 
+    jmp     check_progress     
 
-    ;push the normalized number into xmm15 register from r12
-    push r12
-    movsd xmm15, [rsp]
-    pop r12
+finish:
+    ; ┌────────────────────────────────────────────────────────────────────────┐
+    ; | Restore original registers and flags                                 |
+    ; └────────────────────────────────────────────────────────────────────────┘
+    mov     rax, 7
+    mov     rdx, 0
+    xrstor  [storedata]
+    popf                            ; Restore flags
+    pop r15                         ; Restore r15 (original array pointer)
+    pop r14                         ; Restore r14 (array size)
+    pop r13                         ; Restore r13 (loop counter)
+    pop r12                         ; Restore r12 (temporary register)
+    pop r11                         ; Restore r11
+    pop r10                         ; Restore r10
+    pop r9                          ; Restore r9
+    pop r8                          ; Restore r8
+    pop rsi                         ; Restore rsi
+    pop rdi                         ; Restore rdi
+    pop rdx                         ; Restore rdx
+    pop rcx                         ; Restore rcx
+    pop rbx                         ; Restore rbx
+    pop rbp                         ; Restore rbp to the base of the activation record of the caller program
 
-    ;move the now normalized number from xmm15 back into the array
-    movsd [r15+r13*8], xmm15
-    
-    ;increase the counter for how many numbers in array have been normalized then jump to check again if all numbers are normalized
-    inc r13
-    jmp check_capacity
-
-    ;exit the function
-    exit:
-    ;Restore the GPRs
-    popf
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rsi
-    pop rdi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rbp   ;Restore rbp to the base of the activation record of the caller program
-    ret
-    ;End of the function normalize_array ====================================================================
+    ret                             ; Return from the function
+    ; End of normalize_array
