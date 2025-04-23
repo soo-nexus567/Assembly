@@ -51,7 +51,7 @@ global manager
     extern strlen
     extern gettime
     extern atof
-array_size equ 12
+array_size equ 15
 null equ 0
 true equ -1
 false equ 0
@@ -60,13 +60,19 @@ segment .data
     prompt db "Enter float numbers positive or negative separated by ws. Terminate with control+d", 10, 0
     prompt_tryagain db "Error input try again", 10, 0
     invalid db "These inputs have been tested and they are not the sides of a valid triangle.", 10,10, 0
-    sum_prompt db "The sum of these numbers is %lf", 0
+    sum_prompt db "The sum of these numbers is %.2f", 0
     finalclock db 10, "The total time to perform the additions in the ALU was %ld tics.", 10, 0
     average_tick db "That is an average of %lf tics per each addition.", 10, 0
-    elapsedTics db "The elapsed time was tics, which equals %lf seconds.", 10, 10, 0
+    elapsedTics db "The elapsed time was tics, which equals %.1f ns.", 10, 10, 0
     cpu_freq_prompt db "CPU %lf ghz", 10, 0
-    new_line db 10
+    msg_number db "%d ", 0      ; Format string for printing integers
+    newline db 10, 0   
     negative_one dq -1.0
+    timespec:
+    dq 0          ; seconds
+    dq 100000000          ; nanoseconds
+    ghz_msg db "CPU clock speed is approximately: %.2f GHz", 10, 0
+    one_thousand: dq 10.0
 
 segment .bss
        
@@ -88,6 +94,9 @@ segment .text
     %include "triangle.inc"
 manager:
     back_register
+    mov     rax, 7
+    mov     rdx, 0
+    xsave   [storedata]
     mov rax, 0
     call gettime                    ; Call gettime function to get current cpu tics.
     mov r14, rax
@@ -106,8 +115,7 @@ manager:
     mov     rsi, array_size
     call    input_array
     mov     r15, rax                  ; r15 = array length
-
-    ; Start time
+    ; Start time    
     call gettime
     mov     r14, rax                  ; r14 = start time
 
@@ -116,15 +124,25 @@ manager:
     mov     rsi, r15
     call    total_array
     movsd   [total], xmm0            ; Save harmonic sum
-
-    ; End time
-    call gettime
+     mov rax, 1
+    movsd   xmm0, [total]
+    mov     rdi, sum_prompt
+    mov     rsi, total
+    call    printf
+    
+    call gettime    
     mov     r13, rax                  ; r13 = end time
 
-    ; Calculate elapsed ticks
+     ; Calculate elapsed ticks
     mov     rax, r13
     sub     rax, r14
     mov     [difference], rax
+
+    mov     rsi, [difference]
+    mov     rdi, finalclock
+    mov     rax, 0
+    call    printf
+    ; End time
 
     ; Compute average ticks per addition
     xor     rdx, rdx
@@ -134,128 +152,164 @@ manager:
 
     ; Convert to float
     cvtsi2sd xmm0, rax
+    movsd xmm10, xmm0
 
     ; Print average
     mov     rdi, average_tick
     mov     eax, 1                   ; xmm0 used
     call    printf
-    mov rax, 1
-    call clock_speed                ; Get frequency of Cpu.
-    movsd xmm11, xmm0               ; Save Cpu freq to xmm11 (i.e  2.70000Ghz)
-    mov rdi, cpu_freq_prompt          ; "CPU Frequency: %lf GHz"
-    mov eax, 1                        ; 1 vector register used (xmm11)
-    call printf
-
-    mov rax, 0x41cdcd6500000000     ; 1 Billion in IEEE-754 to divide tics into secs
-    movq xmm12, rax                 ; Copy 1 billion as float to xmm12. 
-
-    mulsd xmm11, xmm12              ; Multiply cpu frequency by 1 billion.
-
-    divsd xmm10, xmm11              ; Divide tics elapsed by cpu speed (cpu GHz x 1 billion)
-
-    mov rax, 1
+   
+    call clock_speed          ; xmm0 now holds CPU frequency, like 2.70
+    movsd xmm11, xmm0         ; save it
+    cvtsi2sd xmm10, rax          ; Convert ticks to float
+    movsd   xmm1, qword [one_thousand]  ; xmm1 = 1000.0
+    divsd   xmm1, xmm11                  ; xmm1 = 1000 / frequency
+    movsd xmm0, xmm1
     mov rdi, elapsedTics            ; "The elapsed time was %ld tics, which equals %lf seconds."                ; Pass Final clock time minus Initial clock time.
-    movsd xmm0, xmm10               ; Pass total seconds elapsed to calculate Harmonic Sum.
-    call printf          
-    ; Print sum
-    movsd   xmm0, [total]
-    mov     rdi, sum_prompt
-    mov     eax, 1
-    call    printf
-
-    ; Print raw clock cycles
-    mov     rsi, [difference]
-    mov     rdi, finalclock
-    mov     rax, 0
-    call    printf
+    mov     eax, 1                ; using 1 vector register
+    call    printf              ; Pass total seconds elapsed to calculate Harmonic Sum.     
     
-    mov rax, 0
-    mov rdi, new_line
-    call printf
+    mov     rax, 7
+    mov     rdx, 0
+    xrstor  [storedata]
     restore_registers
     ret
+output_array:
+    push    rbp                     ; Backup rbp
+    mov     rbp,rsp                 ; The base pointer now points to top of stack
+    push    rdi                     ; Backup rdi
+    push    rsi                     ; Backup rsi
+    push    rdx                     ; Backup rdx
+    push    rcx                     ; Backup rcx
+    push    r8                      ; Backup r8
+    push    r9                      ; Backup r9
+    push    r10                     ; Backup r10
+    push    r11                     ; Backup r11
+    push    r12                     ; Backup r12
+    push    r13                     ; Backup r13
+    push    r14                     ; Backup r14
+    push    r15                     ; Backup r15
+    push    rbx                     ; Backup rbx
+    pushf                           ; Backup rflags
 
+    mov r15, rdi                   ; r15 contains the array (pointer to the array)
+    mov r14, rsi                   ; r14 contains the array size (number of elements)
+    mov r13, 0                     ; r13 is the counter/index for the array
+    xor rcx, rcx                   ; Clear rcx (not needed anymore)
+
+begin3:
+    cmp     r13, r14                ; Check if counter >= array size
+    jge     exit                    ; If yes, exit loop
+
+    mov     rax, [r15 + r13 * 4]    ; Load the integer (4 bytes) from the array (assuming integers are 4 bytes)
+    mov     rdi, msg_number         ; Load format string for integers
+    mov     rsi, rax                ; Set the integer to be printed in rsi
+    mov     rax, 1                  ; Indicate one argument for printf
+    call    printf                  ; Print the integer
+
+    inc     r13                     ; Increment the counter
+    jmp     begin                    ; Repeat the loop
+
+exit3:
+    mov rdi, newline                ; Print newline at the end
+    call printf
+
+    ; Restore the registers
+    popf                            ; Restore rflags
+    pop     rbx                     ; Restore rbx
+    pop     r15                     ; Restore r15
+    pop     r14                     ; Restore r14
+    pop     r13                     ; Restore r13
+    pop     r12                     ; Restore r12
+    pop     r11                     ; Restore r11
+    pop     r10                     ; Restore r10
+    pop     r9                      ; Restore r9
+    pop     r8                      ; Restore r8
+    pop     rcx                     ; Restore rcx
+    pop     rdx                     ; Restore rdx
+    pop     rsi                     ; Restore rsi
+    pop     rdi                     ; Restore rdi
+    pop     rbp                     ; Restore rbp
+
+    ret
 input_array:
+    ; Backup all general-purpose and floating-point registers
     back_register
-    backup_compnents storedata
+    mov     rax, 7
+    mov     rdx, 0
+    xsave   [storedata]
 
-    mov     r13, rdi     ; Pointer to the array where valid floats are stored
-    mov     r14, rsi     ; Number of floats expected
-    mov     r15, 0       ; Counter for valid floats
-    sub     rsp, 1024    ; Allocate buffer space on the stack
+    mov     r13, rdi        ; r13 = pointer to destination float array
+    mov     r14, rsi        ; r14 = number of expected floats
+    xor     r15, r15        ; r15 = valid input counter
+    sub     rsp, 1024       ; temporary buffer on stack (512 bytes per line input)
 
-loop_inputs:
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Use fgets to get user input                            │
-    ; └────────────────────────────────────────────────────────┘
+.loop_inputs:
+    ; Get input string with fgets
     mov     rax, 0
-    mov     rdi, rsp
-    mov     rsi, 512
-    mov     rdx, [stdin]
+    mov     rdi, rsp        ; buffer
+    mov     rsi, 512        ; size
+    mov     rdx, [stdin]    ; stdin FILE pointer
     call    fgets
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Check if user pressed Control+D                        │
-    ; └────────────────────────────────────────────────────────┘
-    cdqe
-    cmp     rax, 0
-    je      end_loop
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Get rid of newline character after every line          │
-    ; └────────────────────────────────────────────────────────┘
+
+    test    rax, rax        ; check for EOF
+    je      .end_loop
+
+    ; Strip newline character
     mov     rdi, rsp
     call    strlen
     mov     rbx, rax
     dec     rbx
-    mov     byte [rdi + rbx], 0x00 
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Check if the input is a valid float                    │
-    ; └────────────────────────────────────────────────────────┘
-    mov     rax, 0
+    mov     byte [rdi + rbx], 0
+
+    ; Check if input is a valid float
     mov     rdi, rsp
     call    isfloat
-    cmp     rax, 0
-    je      invalid_input
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Convert input into a float using atof                  │
-    ; └────────────────────────────────────────────────────────┘
-    mov     rax, 0
+    test    rax, rax
+    je      .invalid_input
+
+    ; Convert string to float
     mov     rdi, rsp
     call    atof
-    movsd   xmm15, xmm0   
+    movsd   xmm15, xmm0
 
+    ; Store in array or FIFO
     cmp     r15, r14
-    jl      store_in_array 
+    jl      .store_in_array
 
-    ; ┌────────────────────────────────────────────────────────┐
-    ; │ Store excess floats in FIFO buffer                     │
-    ; └────────────────────────────────────────────────────────┘
+    ; FIFO buffer for extra values
     mov     rdi, extra_buffer
-    mov     rcx, [buffer_index] 
+    mov     rcx, [buffer_index]
     movsd   [rdi + rcx * 8], xmm15
     inc     rcx
     mov     [buffer_index], rcx
-    jmp     loop_inputs
+    jmp     .loop_inputs
 
-store_in_array:
+.store_in_array:
     movsd   [r13 + r15 * 8], xmm15
     inc     r15
     cmp     r15, r14
-    jl      loop_inputs
+    jl      .loop_inputs
+    jmp     .end_loop
 
-    jmp     end_loop
-
-invalid_input:
-    mov     rax, 0
+.invalid_input:
     mov     rdi, prompt_tryagain
     call    printf
-    jmp     loop_inputs
+    jmp     .loop_inputs
 
-end_loop:
+.end_loop:
     add     rsp, 1024
-    restore_components storedata
+
+    ; Restore floating-point registers
+    mov     rax, 7
+    mov     rdx, 0
+    xrstor  [storedata]
+
+    ; Return count of valid inputs
     mov     rax, r15
     restore_registers
     ret
+
 
 ; ┌────────────────────────────────────────────────────────┐
 ; │ No valid triangle handler                             │
@@ -594,91 +648,55 @@ segment .data
 
 segment .text
 total_array:
-    ;15 pushes
-    push    rbp                         ; Backup rbp
-    mov     rbp,rsp                     ; The base pointer now points to top of stack
-    push    rdi                         ; Backup rdi
-    push    rsi                         ; Backup rsi
-    push    rdx                         ; Backup rdx
-    push    rcx                         ; Backup rcx
-    push    r8                          ; Backup r8
-    push    r9                          ; Backup r9
-    push    r10                         ; Backup r10
-    push    r11                         ; Backup r11
-    push    r12                         ; Backup r12
-    push    r13                         ; Backup r13
-    push    r14                         ; Backup r14
-    push    r15                         ; Backup r15
-    push    rbx                         ; Backup rbx
-    pushf                               ; Backup rflags
-
-    ; Backup all the floating-point numbers (xmm0 - xmm15)
-    mov     rax, 7
-    mov     rdx, 0
-    xsave   [storedata]
-sort_array:
-    mov     r15, rdi    ; Array
-    mov     r14, rsi    ; Count
-    mov     r13, 0      ; Counter
-
-    ; An alternative way of getting 1.0
-    ; mov     rax, 0x3FF0000000000000   ; Convert 1.0 into IEEE format and move it into a GPRs (rax, rbx, etc.)
-    ; push    rax                       ; Push that register onto the stack. rsp (stack pointer) will now point to that memory space
-    ; movsd   xmm15, [rsp]              ; Dereference rsp using [], then move the value into a safe floating point register (xmm10-xmm15)
-    ; pop     rax                       ; Pop the stack into any GPRs to clear the memory space created
-
+   ;15 pushes
+    push    rbp                     ; Backup rbp
+    mov     rbp,rsp                 ; The base pointer now points to top of stack
+    push    rdi                     ; Backup rdi
+    push    rsi                     ; Backup rsi
+    push    rdx                     ; Backup rdx
+    push    rcx                     ; Backup rcx
+    push    r8                      ; Backup r8
+    push    r9                      ; Backup r9
+    push    r10                     ; Backup r10
+    push    r11                     ; Backup r11
+    push    r12                     ; Backup r12
+    push    r13                     ; Backup r13
+    push    r14                     ; Backup r14
+    push    r15                     ; Backup r15
+    push    rbx                     ; Backup rbx
+    pushf                           ; Backup rflags
+    mov r15, rdi
+    mov r14, rsi
+    mov r13, 0
+    pxor xmm0, xmm0
 begin:
-    ; Divide 1/n. n is an element from the array
-    movsd   xmm14, qword [one_point_o]  ; Dereference one_point_o and move it into xmm14
-    divsd   xmm14, [r15 + 8 * r13]      ; Dereference the array element and divide 1 with it, the result is put into xmm14
-
-    ; An alternative way if you move 1.0 into xmm15 above
-    ; movsd   xmm14, xmm15
-    ; divsd   xmm14, [r15 + 8 * r13]      
-
-    ; Add the result to the sum. Use xmm13 as an accumulator
-    addsd   xmm13, xmm14
-
-    ; Increase the counter. If counter > count, exit. If not, loop again
-    inc     r13
-    cmp     r13, r14
-    je      exit
-    jmp     begin
+    cmp     r13, r14             ; Check if counter >= array size
+    jge     exit
+    
+    movsd xmm1, [r15+r13 * 8]
+    addsd xmm0, xmm1
+    inc     r13                  ; Increment loop counter
+    jmp     begin                ; Loop
 
 exit:
-    ; Avoid the overriding the result when restoring the floating-point numbers
-    push    qword 0                     ; Create a space on the stack. rsp will now point to that space
-    movsd   [rsp], xmm13                ; Move the sum into that space pointed by rsp
-
-    ; Restore all the floating-point numbers (xmm0 - xmm15)
-    mov     rax, 7
-    mov     rdx, 0
-    xrstor  [storedata]
-
-    ; Retrieve the result from the stack
-    movsd   xmm13, [rsp]                ; Dereference rsp, then move the value into xmm13
-    pop     rax                         ; Pop (clear) the space created or you get seg fault
-
-    ; Set the return value using xmm0 since our value is a floating-point number
-    ; Main will look into xmm0 or rax depending on the return value
-    movsd   xmm0, xmm13
-
+    ; Set the accumulator as the return before returning
     ;15 pop
-    popf                                ; Restore rflags
-    pop     rbx                         ; Restore rbx
-    pop     r15                         ; Restore r15
-    pop     r14                         ; Restore r14
-    pop     r13                         ; Restore r13
-    pop     r12                         ; Restore r12
-    pop     r11                         ; Restore r11
-    pop     r10                         ; Restore r10
-    pop     r9                          ; Restore r9
-    pop     r8                          ; Restore r8
-    pop     rcx                         ; Restore rcx
-    pop     rdx                         ; Restore rdx
-    pop     rsi                         ; Restore rsi
-    pop     rdi                         ; Restore rdi
-    pop     rbp                         ; Restore rbp
+    movsd xmm0, xmm0
+    popf                            ; Restore rflags
+    pop     rbx                     ; Restore rbx
+    pop     r15                     ; Restore r15
+    pop     r14                     ; Restore r14
+    pop     r13                     ; Restore r13
+    pop     r12                     ; Restore r12
+    pop     r11                     ; Restore r11
+    pop     r10                     ; Restore r10
+    pop     r9                      ; Restore r9
+    pop     r8                      ; Restore r8
+    pop     rcx                     ; Restore rcx
+    pop     rdx                     ; Restore rdx
+    pop     rsi                     ; Restore rsi
+    pop     rdi                     ; Restore rdi
+    pop     rbp                     ; Restore rbp
 
     ret
 ;Program Name        : Clock Speed
@@ -701,115 +719,75 @@ exit:
 ;A copy of the GNU General Public License v3 is available here:
 ;<https://www.gnu.org/licenses/>.
 
+
+
 clock_speed:
-    ; 15 pushes
+    ; Save registers
     push rbp
     mov rbp, rsp
     push rbx
     push rcx
     push rdx
-    push rdi
     push rsi
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
-    pushf
+    push rdi
 
-    mov r14, 0x80000003 ; this value is passed to cpuid to get information about the processor
-    xor r15, r15  ; set loop control variable for section_loop equal to 0
-    xor r11, r11  ; set the counter/flag for character collection equal to 0
+    ; ┌─────────────────────────────────────┐
+    ; │ Read timestamp counter before sleep │
+    ; └─────────────────────────────────────┘
+    rdtsc
+    shl rdx, 32
+    or rax, rdx
+    mov r8, rax       ; r8 = TSC start
 
-section_loop:
-    xor r13, r13  ; zero the loop control variable for register loop
+    ; ┌────────────────────────────┐
+    ; │ Sleep for 1 second         │
+    ; └────────────────────────────┘
+    lea rdi, [rel timespec]
+    xor rsi, rsi
+    call nanosleep_inline
 
-    mov rax, r14  ; get processor brand and information
-    cpuid         ; cpu identification
-    inc r14       ; increment the value passed to get the next section of the string
+    ; ┌────────────────────────────────────┐
+    ; │ Read timestamp counter after sleep │
+    ; └────────────────────────────────────┘
+    rdtsc
+    shl rdx, 32
+    or rax, rdx
+    mov r9, rax       ; r9 = TSC end
 
-    push rdx      ; 4th set of chars
-    push rcx      ; 3rd set of chars
-    push rbx      ; 2nd set of chars
-    push rax      ; 1st set of chars
+    ; ┌─────────────────────────────────────┐
+    ; │ Subtract to get cycles in 1 second │
+    ; └─────────────────────────────────────┘
+    sub r9, r8        ; r9 = cycles in 1 sec
+
+    ; ┌────────────────────────────────────┐
+    ; │ Convert to double (GHz) and print  │
+    ; └────────────────────────────────────┘
+    cvtsi2sd xmm0, r9         ; Convert to double
+    mov rax, 1000000000       ; 1e9
+    cvtsi2sd xmm1, rax
+    divsd xmm0, xmm1          ; cycles / 1e9 = GHz
 
 
-register_loop:
-    xor r12, r12  ; zero the loop control variable for char loop
-    pop rbx       ; get new string of 4 chars
-
-char_loop:
-    mov rdx, rbx  ; move string of 4 chars to rdx
-    and rdx, 0xFF ; gets the first char in string 
-    shr rbx, 0x8  ; shifts string to get next char in next iteration
-
-    cmp rdx, 64   ; 64 is the char value for the @ sign
-    jne counter   ; leaves r11, does not set flag
-    mov r11, 1    ; flag and counter to start storing chars in r10
-
-counter:
-    cmp r11, 1    ; checks if flag is true
-    jl body       ; skips incrementing if flag is false
-    inc r11       ; increments counter if flag is true
-
-body:
-    cmp r11, 4    ; counter is greater than 4
-    jl loop_conditions
-    cmp r11, 7    ; counter is less than 7
-    jg loop_conditions
-
-    shr r10, 0x8  ; r10 acts as a queue for characters
-    shl rdx, 0x18 ; moves new character from rdx into free space for r10
-    or r10, rdx   ; combine the registers
-
-loop_conditions:
-    inc r12
-    cmp r12, 4 ; char loop
-    jne char_loop
-
-    inc r13
-    cmp r13, 4 ; register loop
-    jne register_loop
-
-    inc r15
-    cmp r15, 2 ; string loop
-    jne section_loop
-
-exit1:
-    ; Ensure the string is properly null-terminated for atof
-    xor rax, rax  ; Clear rax (length)
-    mov rdi, rsp  ; Move the string pointer into rdi
-    call add_null_terminator  ; Add null terminator to string
-
-    push r10
-    xor rax, rax
-    mov rdi, rsp 
-    call atof  ; Converts the string representing the clock speed to a float
-    pop r10    ; the value to be returned is already in xmm0, and will be returned
-
-    ; 15 pops
-    popf
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rsi
+    ; Restore registers
     pop rdi
+    pop rsi
     pop rdx
     pop rcx
     pop rbx
     pop rbp
-    ret  ; return xmm0
+    ret
 
-add_null_terminator:
-    ; This will add a null terminator at the end of the string in rsp
-    ; Assumes the string is already in rsp
-    mov byte [rdi + rax], 0    ; Null terminate the string
+nanosleep_inline:
+    push    rdi
+    push    rsi
+    push    rax
+
+    mov     rax, 35                  ; syscall: nanosleep
+    lea     rdi, [rel timespec]      ; pointer to timespec struct
+    xor     rsi, rsi                 ; rsi = NULL (don’t care about remaining time)
+    syscall
+
+    pop     rax
+    pop     rsi
+    pop     rdi
     ret

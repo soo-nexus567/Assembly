@@ -82,7 +82,7 @@ cpuid                              ; Identifies the type of cpu being used on pc
 rdtsc                              ; Counts the number of cycles/tics occured since pc reset.
 
 shl rdx, 32
-add rax, rdx
+or      rax, rdx
 
 ;---------------------------------END OF FILE-----------------------------------------------
 
